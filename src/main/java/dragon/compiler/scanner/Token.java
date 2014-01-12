@@ -26,5 +26,6 @@ public enum Token {
     /** Others **/
     NUMBER, // 0 ~ 9
     IDENTIRIER, // LETTER
+    EOF, // End of file
     ERROR
 }
