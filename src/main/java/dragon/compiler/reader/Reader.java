@@ -39,13 +39,17 @@ public class Reader {
 	}
 
 	public int next() {
-		return line.charAt(charPosition);
+		return line.charAt(charPosition++);
 	}
 	
-	public void nextLine() throws IOException{
-	    line = br.readLine();
-        lineNumber++;
-        charPosition = 0;
+	public void nextLine(){
+	    try {
+	        line = br.readLine();
+	        lineNumber++;
+	        charPosition = 0;
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 	}
 
 	public void close() throws IOException {

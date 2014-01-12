@@ -25,5 +25,6 @@ public enum Token {
     
     /** Others **/
     NUMBER, // 0 ~ 9
-    IDENTIRIER // LETTER
+    IDENTIRIER, // LETTER
+    ERROR
 }
