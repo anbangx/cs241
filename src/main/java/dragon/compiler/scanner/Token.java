@@ -27,5 +27,41 @@ public enum Token {
     NUMBER, // 0 ~ 9
     IDENTIRIER, // LETTER
     EOF, // End of file
-    ERROR
+    ERROR;
+    
+    public static Token getKeywordFromString(String s){
+        switch(s){
+            case "let":
+                return LET;
+            case "call":
+                return CALL;
+            case "if":
+                return IF;
+            case "then":
+                return THEN;
+            case "else":
+                return ELSE;
+            case "fi":
+                return FI;
+            case "while":
+                return WHILE;
+            case "do":
+                return DO;
+            case "od":
+                return OD;
+            case "return":
+                return RETURN;
+            case "var":
+                return VAR;
+            case "array":
+                return ARRAY;
+            case "function":
+                return FUNCTION;
+            case "procedure":
+                return PROCEDURE;
+            case "main":
+                return MAIN;
+        }
+        return null;
+    }
 }
