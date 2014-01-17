@@ -1,5 +1,8 @@
 package dragon.compiler.parser;
 
+import java.io.IOException;
+
+import dragon.compiler.data.SyntaxFormatException;
 import dragon.compiler.scanner.Scanner;
 import dragon.compiler.scanner.Token;
 
@@ -8,20 +11,20 @@ public class Parser {
     private Scanner scanner;
     private Token token;
 
-    public Parser(Scanner scanner) {
+    public Parser(Scanner scanner) throws IOException{
         this.scanner = scanner;
         this.token = next();
     }
 
-    public Token next() {
+    public Token next() throws IOException{
         return scanner.getNextToken();
     }
     
-    public void parse(){
+    public void parse() throws IOException, SyntaxFormatException{
         computation();
     }
     
-    private void computation() {
+    private void computation() throws IOException, SyntaxFormatException{
         if (token == Token.MAIN) {
             next();
             while (token == Token.VAR || token == Token.ARRAY) {
@@ -38,18 +41,16 @@ public class Parser {
                     if (token == Token.PERIOD) {
                         next();
                     } else
-                        printSyntaxError(token.toString()
-                                + " is not a valid ., which is required in the end of computation!");
+                        throwFormatException(". expected in computation");
                 } else
-                    printSyntaxError(token.toString() + " is not a valid }, which is required in computation!");
+                    throwFormatException("} expected in computation");
             } else
-                printSyntaxError(token.toString() + " is not a valid {, which is required in computation!");
+                throwFormatException("{ expected in computation");
         } else
-            printSyntaxError(token.toString()
-                    + " is not a valid Main, which is required to be the first token in computation!");
+            throwFormatException("main expected in computation");
     }
 
-    private void designator() {
+    private void designator() throws IOException, SyntaxFormatException{
         if (token == Token.IDENTIRIER) {
             next();
             while (token == Token.BEGIN_BRACKET) {
@@ -58,15 +59,14 @@ public class Parser {
                 if (token == Token.END_BRACKET)
                     next();
                 else
-                    printSyntaxError("[ should be followed by ]");
+                    throwFormatException("[ expected after ]");
             }
         } else {
-            printSyntaxError(token.toString()
-                    + " is not a valid IDENTIRIER, which is required to be the first token in designator!");
+            throwFormatException("identifier expected in designator");
         }
     }
 
-    private void factor() {
+    private void factor() throws IOException, SyntaxFormatException{
         if (token == Token.IDENTIRIER) {
             designator();
         } else if (token == Token.NUMBER) {
@@ -77,14 +77,14 @@ public class Parser {
             if (token == Token.END_PARENTHESIS)
                 next();
             else
-                printSyntaxError("( should be followed by )");
+                throwFormatException("( expected after )");
         } else if (token == Token.CALL) {
             funcCall();
         } else
-            printSyntaxError(token.toString() + " is not a valid factor!");
+            throwFormatException("not a valid factor!");
     }
 
-    private void term() {
+    private void term() throws IOException, SyntaxFormatException{
         factor();
         while (token == Token.TIMES || token == Token.DIVIDE) {
             next();
@@ -92,7 +92,7 @@ public class Parser {
         }
     }
 
-    private void expression() {
+    private void expression() throws IOException, SyntaxFormatException{
         term();
         while (token == Token.PLUS || token == Token.MINUS) {
             next();
@@ -100,39 +100,35 @@ public class Parser {
         }
     }
 
-    private boolean isRelOp() {
+    private boolean isRelOp() throws IOException, SyntaxFormatException{
         return token == Token.EQL || token == Token.NEQ || token == Token.LSS || token == Token.LEQ
                 || token == Token.GRE || token == Token.GEQ;
     }
 
-    private void relation() {
+    private void relation() throws IOException, SyntaxFormatException{
         expression();
         if (isRelOp()) {
             next();
             expression();
         } else
-            printSyntaxError(token.toString()
-                    + " is not a valid relOp, which is required to be followed by expression in relation!");
+            throwFormatException("relOp expected in relation");
     }
 
-    private void assignment() {
+    private void assignment() throws IOException, SyntaxFormatException{
         if (token == Token.LET) {
             next();
             designator();
-            if (token == Token.DESIGNATOR) {
+            if (token == Token.BECOMETO) {
                 next();
                 expression();
             } else {
-                printSyntaxError(token.toString()
-                        + " is not a valid Token.DESIGNATOR, which is required to be followed by designator"
-                        + " in assignment!");
+                throwFormatException("<- expected in assignment");
             }
         } else
-            printSyntaxError(token.toString()
-                    + " is not a valid Token.LET, which is required to be the first token in assignment!");
+            throwFormatException("let expected in assignment");
     }
 
-    private void funcCall() {
+    private void funcCall() throws IOException, SyntaxFormatException{
         if (token == Token.CALL) {
             next();
             if (token == Token.IDENTIRIER) {
@@ -149,16 +145,14 @@ public class Parser {
                     if (token == Token.END_PARENTHESIS) {
                         next();
                     } else
-                        printSyntaxError(token.toString()
-                                + " is not a valid ), which is required to be followed by ( in funcCall!");
+                        throwFormatException(") expected in funcCall");
                 }
             } else
-                printSyntaxError(token.toString()
-                        + " is not a valid Token.IDENTIRIER, which is required to be the first token in funcCall!");
+                throwFormatException("identifier expected in funCall");
         }
     }
 
-    private void ifStatement() {
+    private void ifStatement() throws IOException, SyntaxFormatException{
         if (token == Token.IF) {
             next();
             relation();
@@ -172,17 +166,14 @@ public class Parser {
                 if (token == Token.FI) {
                     next();
                 } else
-                    printSyntaxError(token.toString()
-                            + " is not a valid Token.FI, which is required to be the last token in ifStatement!");
+                    throwFormatException("fi expected in ifStatement");
             } else
-                printSyntaxError(token.toString()
-                        + " is not a valid Token.THEN, which is required to be followed by if in ifStatement!");
+                throwFormatException("then expected in ifStatement");
         } else
-            printSyntaxError(token.toString()
-                    + " is not a valid Token.IF, which is required to be the first token in ifStatement!");
+            throwFormatException("if expected in ifStatement");
     }
 
-    private void whileStatement() {
+    private void whileStatement() throws IOException, SyntaxFormatException{
         if (token == Token.WHILE) {
             next();
             relation();
@@ -192,25 +183,21 @@ public class Parser {
                 if (token == Token.OD) {
                     next();
                 } else
-                    printSyntaxError(token.toString()
-                            + " is not a valid Token.OD, which is required to be the last token in whileStatement!");
+                    throwFormatException("od expected in whileStatement");
             } else
-                printSyntaxError(token.toString()
-                        + " is not a valid Token.DO, which is required to be followed by while in whileStatement!");
+                throwFormatException("do expected in whileStatement");
         } else
-            printSyntaxError(token.toString()
-                    + " is not a valid Token.WHILE, which is required to be the first token in whileStatement!");
+            throwFormatException("while expected in whileStatement");
     }
 
-    private void returnStatement() {
+    private void returnStatement() throws IOException, SyntaxFormatException{
         if (token == Token.RETURN) {
             next();
             if (token == Token.IDENTIRIER) { // expression -> term -> factor -> designator -> identifier
                 expression();
             }
         } else
-            printSyntaxError(token.toString()
-                    + " is not a valid Token.RETURN, which is required to be the first token in returnStatement!");
+            throwFormatException("return expected in returnStatement");
     }
 
     private boolean isStatement() {
@@ -218,7 +205,7 @@ public class Parser {
                 || token == Token.RETURN;
     }
 
-    private void statement() {
+    private void statement() throws IOException, SyntaxFormatException{
         if (token == Token.LET) { // assignment
             assignment();
         } else if (token == Token.CALL) { // funcCall
@@ -230,11 +217,10 @@ public class Parser {
         } else if (token == Token.RETURN) { // returnStatement
             returnStatement();
         } else
-            printSyntaxError(token.toString()
-                    + " is not a valid statement token, which is required to be the first token in statement!");
+            throwFormatException("not a valid statement");
     }
 
-    private void statSequence() {
+    private void statSequence() throws IOException, SyntaxFormatException{
         statement();
         while (token == Token.SEMICOMA) {
             next();
@@ -242,7 +228,7 @@ public class Parser {
         }
     }
 
-    private void typeDecl() {
+    private void typeDecl() throws IOException, SyntaxFormatException{
         if (token == Token.VAR) {
             // TODO
         } else if (token == Token.ARRAY) {
@@ -253,22 +239,19 @@ public class Parser {
                 if (token == Token.NUMBER) {
                     // TODO return val
                 } else
-                    printSyntaxError(token.toString()
-                            + " is not a valid number, which is required for an array in typeDel!");
+                    throwFormatException("number expected in array declare");
                 if (token == Token.END_BRACKET) {
                     next();
                 } else
-                    printSyntaxError(token.toString()
-                            + " is not a valid ], which is required to be followed by [ for an array in typeDel!");
+                    throwFormatException("] is expected in array declare");
             }
             if (!delDimension)
-                printSyntaxError("no dimension information in array declare!");
+                throwFormatException("no dimension information in array declare!");
         } else
-            printSyntaxError(token.toString()
-                    + " is not a valid var or array, which is required to be the first token in typeDel!");
+            throwFormatException("not a valid typeDecl");
     }
 
-    private void varDecl() {
+    private void varDecl() throws IOException, SyntaxFormatException{
         typeDecl();
         if (token == Token.IDENTIRIER) {
             next();
@@ -277,20 +260,17 @@ public class Parser {
                 if (token == Token.IDENTIRIER)
                     next();
                 else
-                    printSyntaxError(token.toString()
-                            + " is not a valid Token.IDENTIRIER, which is required to be followed by , in varDel!");
+                    throwFormatException("identifier expeced in varDecl");
             }
             if (token == Token.SEMICOMA) {
                 next();
             } else
-                printSyntaxError(token.toString()
-                        + " is not a valid Token.SEMICOMA, which is required to be the last token in varDel!");
+                throwFormatException("; expected in varDecl");
         } else
-            printSyntaxError(token.toString()
-                    + " is not a valid Token.IDENTIRIER, which is required to be followed by typeDel in varDel!");
+            throwFormatException("not a valid varDecl");
     }
 
-    private void funcDecl() {
+    private void funcDecl() throws IOException, SyntaxFormatException{
         if (token == Token.FUNCTION || token == Token.PROCEDURE) {
             next();
             if (token == Token.IDENTIRIER) {
@@ -304,22 +284,16 @@ public class Parser {
                     if (token == Token.SEMICOMA) {
                         next();
                     } else
-                        printSyntaxError(token.toString()
-                                + " is not a valid ;, which is required to be followed by funcBody in funcDecl!");
+                        throwFormatException("; expeced after funcBody in funcDecl");
                 } else
-                    printSyntaxError(token.toString()
-                            + " is not a valid ;, which is required to be ahead of funcBody in funcDecl!");
+                    throwFormatException("; expeced after identifier in funcDecl");
             } else
-                printSyntaxError(token.toString()
-                        + " is not a valid Token.IDENTIRIER, which is required to be followed by function or "
-                        + "procedure in funcDel!");
+                throwFormatException("identifier expected after function/procedure in funcDecl");
         } else
-            printSyntaxError(token.toString()
-                    + " is not a valid Token.FUNCTION or Token.PROCEDURE, which is required to be the first token "
-                    + "in funcDel!");
+            throwFormatException("not a valid funcDecl");
     }
 
-    private void formalParam() {
+    private void formalParam() throws IOException, SyntaxFormatException{
         if (token == Token.BEGIN_PARENTHESIS) {
             if (token == Token.IDENTIRIER) {
                 next();
@@ -328,22 +302,18 @@ public class Parser {
                     if (token == Token.IDENTIRIER) {
                         next();
                     } else
-                        printSyntaxError(token.toString()
-                                + " is not a valid Token.IDENTIRIER, which is required to be followed by , as non-first"
-                                + " parameter in formalParam!");
+                        throwFormatException("identifier expeced after , in formalParam");
                 }
             }
-            if (token == Token.BEGIN_PARENTHESIS) {
+            if (token == Token.END_PARENTHESIS) {
                 next();
             } else
-                printSyntaxError(token.toString()
-                        + " is not a valid ), which is required to be the last token in formalParam!");
+                throwFormatException(") expected in formalParam");
         } else
-            printSyntaxError(token.toString()
-                    + " is not a valid (, which is required to be the first token in formalParam!");
+            throwFormatException("not a valid formalParam");
     }
-
-    private void funcBody() {
+ 
+    private void funcBody() throws IOException, SyntaxFormatException {
         while(token == Token.VAR || token == Token.ARRAY){
             varDecl();
         }
@@ -354,14 +324,14 @@ public class Parser {
             if(token == Token.END_BRACE){
                 next();
             } else
-                printSyntaxError(token.toString()
-                        + " is not a valid }, which is required to be the last token in funcBody!");
+                throwFormatException("} expected after { in funcBody");
         } else
-            printSyntaxError(token.toString()
-                    + " is not a valid {, which is required to be the first token followed by main in funcBody!");
+            throwFormatException("{ expected in funcBody");
     }
-
-    private void printSyntaxError(String errMsg) {
-        scanner.printSyntaxError(errMsg);
+    
+    private void throwFormatException(String string)
+            throws SyntaxFormatException {
+        string = "Parser error: Line " + scanner.getLineNumber() + ": " + string;
+        throw new SyntaxFormatException(string);
     }
 }

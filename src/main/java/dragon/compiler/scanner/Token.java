@@ -7,7 +7,7 @@ public enum Token {
     VAR, ARRAY, FUNCTION, PROCEDURE, MAIN,
     
     /** designator **/
-    DESIGNATOR, // <-
+    BECOMETO, // <-
     
     /** Operator **/
     PLUS, MINUS, TIMES, DIVIDE, // +,-,*,/

@@ -1,6 +1,7 @@
 package dragon.compiler.scanner;
 
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.ArrayList;
 
 import dragon.compiler.reader.Reader;
@@ -11,32 +12,26 @@ public class Scanner {
     private int sym;
 
     private int val;
-    private int identIdx;
+    private int id;
 
     private ArrayList<String> existIdents; // keep current identIdx and List[existidents] to save space 
 
     // Constructor: open file and scan the first token into 'inputSym'
-    public Scanner(String path) throws FileNotFoundException {
+    public Scanner(String path) throws FileNotFoundException, IOException {
         reader = new Reader(path);
         sym = -1;
-        identIdx = -1;
+        id = -1;
         existIdents = new ArrayList<String>();
         next();
     }
 
     // Advance to the next character
-    private void next() {
+    private void next() throws IOException {
         sym = reader.next();
     }
 
-    // Advance to the first character of next line
-    private void nextLine() {
-        reader.nextLine();
-        next();
-    }
-
     // Advance to the next token
-    public Token getNextToken() {
+    public Token getNextToken() throws IOException {
         // check if eof
         if (sym == -1) // TODO what value of 'sym' when reaching the end of file
             return Token.EOF;
@@ -106,7 +101,7 @@ public class Scanner {
                 } else {
                     return Token.LSS;
                 }
-                // if punctuation(. , ; :)
+            // if punctuation(. , ; :)
             case '.':
                 next();
                 return Token.PERIOD;
@@ -119,7 +114,7 @@ public class Scanner {
             case ':':
                 next();
                 return Token.COLON;
-                // if block (, ), [, ], {, }
+            // if block (, ), [, ], {, }
             case '(':
                 next();
                 return Token.BEGIN_PARENTHESIS;
@@ -150,16 +145,17 @@ public class Scanner {
      * new line: \n;
      * space: \b or ' ';
      * in PL241, both # and / are used for comments
+     * @throws IOException 
      */
-    public Token skipSpaceAndComment() {
+    public Token skipSpaceAndComment() throws IOException {
         while (sym == '\t' || sym == '\r' || sym == '\n' || sym == '\b' || sym == '#' || sym == '/') {
             if (sym == '\t' || sym == '\r' || sym == '\n' || sym == '\b') {
                 next();
             } else if (sym == '#') {
-                nextLine();
+                reader.nextLine();
             } else if (sym == '/') {
                 if (sym == '/') {
-                    nextLine();
+                    reader.nextLine();
                 } else {
                     return Token.DIVIDE;
                 }
@@ -168,7 +164,7 @@ public class Scanner {
         return null;
     }
 
-    public Token getNumberToken() {
+    public Token getNumberToken() throws IOException {
         boolean isNumber = false;
         this.val = 0;
         while (sym >= '0' && sym <= '9') { // If digit, number
@@ -180,7 +176,7 @@ public class Scanner {
         return isNumber ? Token.NUMBER : null;
     }
 
-    public Token getLetterToken() {
+    public Token getLetterToken() throws IOException{
         boolean isLetter = false;
         StringBuilder sb = null;
         while ((sym >= 'A' && sym <= 'Z') || (sym >= 'a' && sym <= 'z') || (sym >= '0' && sym <= '9')) { // if letter or digit, ident or keyword
@@ -206,10 +202,14 @@ public class Scanner {
         // otherwise, it's ident
         if (!existIdents.contains(candidate))
             existIdents.add(candidate);
-        this.identIdx = existIdents.indexOf(candidate);
+        this.id = existIdents.indexOf(candidate);
         return Token.IDENTIRIER;
     }
-
+    
+    public int getLineNumber(){
+        return reader.getLineNumber();
+    }
+    
     public void printSyntaxError(String errMsg) {
         System.err.println("Syntax error at " + reader.getLineNumber() + ": " + errMsg);
     }

@@ -21,37 +21,42 @@ public class Reader {
 
 	public void open() throws IOException {
 		line = br.readLine();
-		lineNumber = 0;
+		lineNumber = 1;
 		charPosition = 0;
 	}
 
-	public boolean hasNext() throws IOException {
-		if (line == null) {
-			return false;
-		}
-		if (charPosition < line.length()) {
-			return true;
-		}
-		line = br.readLine();
-		lineNumber++;
-		charPosition = 0;
-		return hasNext();
-	}
-
-	public int next() {
-		return line.charAt(charPosition++);
+	public int next() throws IOException {
+	    charPosition++;
+        if (charPosition > line.length()) {
+            nextLine();
+        }
+        return line.charAt(charPosition);
 	}
 	
-	public void nextLine(){
-	    try {
-	        line = br.readLine();
-	        lineNumber++;
-	        charPosition = 0;
-        } catch (IOException e) {
-            e.printStackTrace();
+	public void nextLine() throws IOException{
+	    line = br.readLine();
+        if (line != null) {
+            lineNumber++;
+            charPosition = 0;
+            while (line != null && line.trim().length() == 0) {
+                line = br.readLine();
+                lineNumber++;
+                charPosition = 0;
+            }
         }
 	}
-
+	
+   public Character getCurrentChar() {
+        if (line == null) {
+            return null;
+        }
+        if (charPosition >= line.length()) {
+            // trick to show the end of the line.
+            return '#';
+        }
+        return line.charAt(charPosition);
+    }
+	   
 	public void close() throws IOException {
 		br.close();
 	}
