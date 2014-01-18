@@ -1,4 +1,4 @@
-package dragon.compiler.scanner;
+package dragon.compiler.data;
 
 public enum Token {
     
@@ -25,7 +25,7 @@ public enum Token {
     
     /** Others **/
     NUMBER, // 0 ~ 9
-    IDENTIRIER, // LETTER
+    IDENTIFIER, // LETTER
     EOF, // End of file
     ERROR;
     

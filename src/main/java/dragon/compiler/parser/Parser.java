@@ -3,30 +3,32 @@ package dragon.compiler.parser;
 import java.io.IOException;
 
 import dragon.compiler.data.SyntaxFormatException;
+import dragon.compiler.data.Token;
 import dragon.compiler.scanner.Scanner;
-import dragon.compiler.scanner.Token;
 
 public class Parser {
 
     private Scanner scanner;
     private Token token;
 
-    public Parser(Scanner scanner) throws IOException{
-        this.scanner = scanner;
-        this.token = next();
+    public Parser(String path) throws IOException{
+        this.scanner = new Scanner(path);
     }
 
-    public Token next() throws IOException{
-        return scanner.getNextToken();
+    public void moveToNextToken() throws IOException{
+        token = scanner.getNextToken();
     }
     
     public void parse() throws IOException, SyntaxFormatException{
+        scanner.open();
+        moveToNextToken();
         computation();
+        scanner.close();
     }
     
     private void computation() throws IOException, SyntaxFormatException{
         if (token == Token.MAIN) {
-            next();
+            moveToNextToken();
             while (token == Token.VAR || token == Token.ARRAY) {
                 varDecl();
             }
@@ -34,12 +36,12 @@ public class Parser {
                 funcDecl();
             }
             if (token == Token.BEGIN_BRACE) {
-                next();
+                moveToNextToken();
                 statSequence();
                 if (token == Token.END_BRACE) {
-                    next();
+                    moveToNextToken();
                     if (token == Token.PERIOD) {
-                        next();
+                        moveToNextToken();
                     } else
                         throwFormatException(". expected in computation");
                 } else
@@ -51,13 +53,13 @@ public class Parser {
     }
 
     private void designator() throws IOException, SyntaxFormatException{
-        if (token == Token.IDENTIRIER) {
-            next();
+        if (token == Token.IDENTIFIER) {
+            moveToNextToken();
             while (token == Token.BEGIN_BRACKET) {
-                next();
+                moveToNextToken();
                 expression();
                 if (token == Token.END_BRACKET)
-                    next();
+                    moveToNextToken();
                 else
                     throwFormatException("[ expected after ]");
             }
@@ -65,17 +67,23 @@ public class Parser {
             throwFormatException("identifier expected in designator");
         }
     }
-
+    
+    private boolean isExpression(){
+        return token == Token.IDENTIFIER || token == Token.NUMBER || token == Token.BEGIN_PARENTHESIS
+                || token == Token.CALL;
+    }
+    
     private void factor() throws IOException, SyntaxFormatException{
-        if (token == Token.IDENTIRIER) {
+        if (token == Token.IDENTIFIER) {
             designator();
         } else if (token == Token.NUMBER) {
             // TODO return a val here
+            moveToNextToken();
         } else if (token == Token.BEGIN_PARENTHESIS) {
-            next();
+            moveToNextToken();
             expression();
             if (token == Token.END_PARENTHESIS)
-                next();
+                moveToNextToken();
             else
                 throwFormatException("( expected after )");
         } else if (token == Token.CALL) {
@@ -87,7 +95,7 @@ public class Parser {
     private void term() throws IOException, SyntaxFormatException{
         factor();
         while (token == Token.TIMES || token == Token.DIVIDE) {
-            next();
+            moveToNextToken();
             factor();
         }
     }
@@ -95,7 +103,7 @@ public class Parser {
     private void expression() throws IOException, SyntaxFormatException{
         term();
         while (token == Token.PLUS || token == Token.MINUS) {
-            next();
+            moveToNextToken();
             term();
         }
     }
@@ -108,7 +116,7 @@ public class Parser {
     private void relation() throws IOException, SyntaxFormatException{
         expression();
         if (isRelOp()) {
-            next();
+            moveToNextToken();
             expression();
         } else
             throwFormatException("relOp expected in relation");
@@ -116,10 +124,10 @@ public class Parser {
 
     private void assignment() throws IOException, SyntaxFormatException{
         if (token == Token.LET) {
-            next();
+            moveToNextToken();
             designator();
             if (token == Token.BECOMETO) {
-                next();
+                moveToNextToken();
                 expression();
             } else {
                 throwFormatException("<- expected in assignment");
@@ -130,20 +138,20 @@ public class Parser {
 
     private void funcCall() throws IOException, SyntaxFormatException{
         if (token == Token.CALL) {
-            next();
-            if (token == Token.IDENTIRIER) {
-                next();
+            moveToNextToken();
+            if (token == Token.IDENTIFIER) {
+                moveToNextToken();
                 if (token == Token.BEGIN_PARENTHESIS) {
-                    next();
-                    if (token == Token.IDENTIRIER) { // expression -> term -> factor -> designator -> identifier
+                    moveToNextToken();
+                    if (isExpression()) { // expression -> term -> factor -> designator -> identifier
                         expression();
                         while (token == Token.COMMA) {
-                            next();
+                            moveToNextToken();
                             expression();
                         }
                     }
                     if (token == Token.END_PARENTHESIS) {
-                        next();
+                        moveToNextToken();
                     } else
                         throwFormatException(") expected in funcCall");
                 }
@@ -154,17 +162,17 @@ public class Parser {
 
     private void ifStatement() throws IOException, SyntaxFormatException{
         if (token == Token.IF) {
-            next();
+            moveToNextToken();
             relation();
             if (token == Token.THEN) {
-                next();
+                moveToNextToken();
                 statSequence();
                 if (token == Token.ELSE) {
-                    next();
+                    moveToNextToken();
                     statSequence();
                 }
                 if (token == Token.FI) {
-                    next();
+                    moveToNextToken();
                 } else
                     throwFormatException("fi expected in ifStatement");
             } else
@@ -175,13 +183,13 @@ public class Parser {
 
     private void whileStatement() throws IOException, SyntaxFormatException{
         if (token == Token.WHILE) {
-            next();
+            moveToNextToken();
             relation();
             if (token == Token.DO) {
-                next();
+                moveToNextToken();
                 statSequence();
                 if (token == Token.OD) {
-                    next();
+                    moveToNextToken();
                 } else
                     throwFormatException("od expected in whileStatement");
             } else
@@ -192,8 +200,8 @@ public class Parser {
 
     private void returnStatement() throws IOException, SyntaxFormatException{
         if (token == Token.RETURN) {
-            next();
-            if (token == Token.IDENTIRIER) { // expression -> term -> factor -> designator -> identifier
+            moveToNextToken();
+            if (isExpression()) { // expression -> term -> factor -> designator -> identifier
                 expression();
             }
         } else
@@ -223,7 +231,7 @@ public class Parser {
     private void statSequence() throws IOException, SyntaxFormatException{
         statement();
         while (token == Token.SEMICOMA) {
-            next();
+            moveToNextToken();
             statement();
         }
     }
@@ -231,17 +239,20 @@ public class Parser {
     private void typeDecl() throws IOException, SyntaxFormatException{
         if (token == Token.VAR) {
             // TODO
+            moveToNextToken();
         } else if (token == Token.ARRAY) {
+            moveToNextToken();
             boolean delDimension = false;
             while (token == Token.BEGIN_BRACKET) {
                 delDimension = true;
-                next();
+                moveToNextToken();
                 if (token == Token.NUMBER) {
                     // TODO return val
+                    moveToNextToken();
                 } else
                     throwFormatException("number expected in array declare");
                 if (token == Token.END_BRACKET) {
-                    next();
+                    moveToNextToken();
                 } else
                     throwFormatException("] is expected in array declare");
             }
@@ -253,17 +264,17 @@ public class Parser {
 
     private void varDecl() throws IOException, SyntaxFormatException{
         typeDecl();
-        if (token == Token.IDENTIRIER) {
-            next();
+        if (token == Token.IDENTIFIER) {
+            moveToNextToken();
             while (token == Token.COMMA) {
-                next();
-                if (token == Token.IDENTIRIER)
-                    next();
+                moveToNextToken();
+                if (token == Token.IDENTIFIER)
+                    moveToNextToken();
                 else
                     throwFormatException("identifier expeced in varDecl");
             }
             if (token == Token.SEMICOMA) {
-                next();
+                moveToNextToken();
             } else
                 throwFormatException("; expected in varDecl");
         } else
@@ -272,17 +283,17 @@ public class Parser {
 
     private void funcDecl() throws IOException, SyntaxFormatException{
         if (token == Token.FUNCTION || token == Token.PROCEDURE) {
-            next();
-            if (token == Token.IDENTIRIER) {
-                next();
-                if (token == Token.BEGIN_BRACE) { // formalParam
+            moveToNextToken();
+            if (token == Token.IDENTIFIER) {
+                moveToNextToken();
+                if (token == Token.BEGIN_PARENTHESIS) { // formalParam
                     formalParam();
                 }
                 if (token == Token.SEMICOMA) {
-                    next();
+                    moveToNextToken();
                     funcBody();
                     if (token == Token.SEMICOMA) {
-                        next();
+                        moveToNextToken();
                     } else
                         throwFormatException("; expeced after funcBody in funcDecl");
                 } else
@@ -295,18 +306,19 @@ public class Parser {
 
     private void formalParam() throws IOException, SyntaxFormatException{
         if (token == Token.BEGIN_PARENTHESIS) {
-            if (token == Token.IDENTIRIER) {
-                next();
+            moveToNextToken();
+            if (token == Token.IDENTIFIER) {
+                moveToNextToken();
                 while (token == Token.COMMA) {
-                    next();
-                    if (token == Token.IDENTIRIER) {
-                        next();
+                    moveToNextToken();
+                    if (token == Token.IDENTIFIER) {
+                        moveToNextToken();
                     } else
                         throwFormatException("identifier expeced after , in formalParam");
                 }
             }
             if (token == Token.END_PARENTHESIS) {
-                next();
+                moveToNextToken();
             } else
                 throwFormatException(") expected in formalParam");
         } else
@@ -318,11 +330,12 @@ public class Parser {
             varDecl();
         }
         if(token == Token.BEGIN_BRACE){
+            moveToNextToken();
             if(isStatement()){ // statSequence -> statement
                 statSequence();
             }
             if(token == Token.END_BRACE){
-                next();
+                moveToNextToken();
             } else
                 throwFormatException("} expected after { in funcBody");
         } else
@@ -333,5 +346,10 @@ public class Parser {
             throws SyntaxFormatException {
         string = "Parser error: Line " + scanner.getLineNumber() + ": " + string;
         throw new SyntaxFormatException(string);
+    }
+    
+    public static void main(String[] args) throws Exception {
+        Parser ps = new Parser("src/test/resources/testprogs/test014.txt");
+        ps.parse();
     }
 }

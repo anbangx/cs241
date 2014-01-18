@@ -25,10 +25,11 @@ public class Reader {
 		charPosition = 0;
 	}
 
-	public int next() throws IOException {
+	public Character getNextChar() throws IOException {
 	    charPosition++;
-        if (charPosition > line.length()) {
-            nextLine();
+        if (charPosition >= line.length()) {
+            // trick to show the end of the line.
+            return '#';
         }
         return line.charAt(charPosition);
 	}
@@ -48,7 +49,7 @@ public class Reader {
 	
    public Character getCurrentChar() {
         if (line == null) {
-            return null;
+            return '~';
         }
         if (charPosition >= line.length()) {
             // trick to show the end of the line.
@@ -56,7 +57,7 @@ public class Reader {
         }
         return line.charAt(charPosition);
     }
-	   
+   
 	public void close() throws IOException {
 		br.close();
 	}

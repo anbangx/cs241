@@ -4,12 +4,13 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import dragon.compiler.data.Token;
 import dragon.compiler.reader.Reader;
 
 public class Scanner {
 
     private Reader reader;
-    private int sym;
+    private Character curChar;
 
     private int val;
     private int id;
@@ -19,28 +20,45 @@ public class Scanner {
     // Constructor: open file and scan the first token into 'inputSym'
     public Scanner(String path) throws FileNotFoundException, IOException {
         reader = new Reader(path);
-        sym = -1;
+        curChar = null;
         id = -1;
         existIdents = new ArrayList<String>();
-        next();
+        existIdents.add("InputNum");
+        existIdents.add("OutputNum");
+        existIdents.add("OutputNewLine");;
     }
-
+    
+    public void open() throws IOException {
+        reader.open();
+        curChar = reader.getCurrentChar();
+    }
+    
+    public void close() throws IOException {
+        reader.close();
+    }
+    
     // Advance to the next character
-    private void next() throws IOException {
-        sym = reader.next();
+    private void nextChar() throws IOException {
+        curChar = reader.getNextChar();
+    }
+    
+    // Advance to the first character of next line
+    private void nextLine() throws IOException {
+        reader.nextLine();
+        curChar = reader.getCurrentChar();
     }
 
     // Advance to the next token
     public Token getNextToken() throws IOException {
-        // check if eof
-        if (sym == -1) // TODO what value of 'sym' when reaching the end of file
-            return Token.EOF;
-
         Token curToken = null;
         // Skip space and comment
         if ((curToken = skipSpaceAndComment()) != null)
             return curToken;
-
+        
+        // check if eof
+        if (curChar == '~')
+            return Token.EOF;
+        
         // Check if it is number token
         if ((curToken = getNumberToken()) != null)
             return curToken;
@@ -50,25 +68,22 @@ public class Scanner {
             return curToken;
 
         // otherwise, other tokens
-        switch (sym) {
-        // if operand(+,-,*,/)
+        switch (curChar) {
+            // if operand(+,-,*,/)
             case '+':
-                next();
+                nextChar();
                 return Token.PLUS;
             case '-':
-                next();
+                nextChar();
                 return Token.MINUS;
             case '*':
-                next();
+                nextChar();
                 return Token.TIMES;
-            case '/':
-                next();
-                return Token.DIVIDE;
-                // if comparison, here pay attention to designator('<-')
+            // if comparison, here pay attention to designator('<-')
             case '=':
-                next();
-                if (sym == '=') {
-                    next();
+                nextChar();
+                if (curChar == '=') {
+                    nextChar();
                     return Token.EQL;
                 } else {
                     //error
@@ -76,9 +91,9 @@ public class Scanner {
                     return Token.ERROR;
                 }
             case '!':
-                next();
-                if (sym == '=') {
-                    next();
+                nextChar();
+                if (curChar == '=') {
+                    nextChar();
                     return Token.NEQ;
                 } else {
                     //error
@@ -86,52 +101,55 @@ public class Scanner {
                     return Token.ERROR;
                 }
             case '>':
-                next();
-                if (sym == '=') {
-                    next();
+                nextChar();
+                if (curChar == '=') {
+                    nextChar();
                     return Token.GEQ;
                 } else { // TODO: does it need to check syntax error?
                     return Token.GRE;
                 }
             case '<':
-                next();
-                if (sym == '=') {
-                    next();
+                nextChar();
+                if (curChar == '=') {
+                    nextChar();
                     return Token.LEQ;
+                } else if(curChar == '-'){
+                    nextChar();
+                    return Token.BECOMETO;
                 } else {
                     return Token.LSS;
                 }
             // if punctuation(. , ; :)
             case '.':
-                next();
+                nextChar();
                 return Token.PERIOD;
             case ',':
-                next();
+                nextChar();
                 return Token.COMMA;
             case ';':
-                next();
+                nextChar();
                 return Token.SEMICOMA;
             case ':':
-                next();
+                nextChar();
                 return Token.COLON;
             // if block (, ), [, ], {, }
             case '(':
-                next();
+                nextChar();
                 return Token.BEGIN_PARENTHESIS;
             case ')':
-                next();
+                nextChar();
                 return Token.END_PARENTHESIS;
             case '[':
-                next();
+                nextChar();
                 return Token.BEGIN_BRACKET;
             case ']':
-                next();
+                nextChar();
                 return Token.END_BRACKET;
             case '{':
-                next();
+                nextChar();
                 return Token.BEGIN_BRACE;
             case '}':
-                next();
+                nextChar();
                 return Token.END_BRACE;
         }
 
@@ -148,14 +166,15 @@ public class Scanner {
      * @throws IOException 
      */
     public Token skipSpaceAndComment() throws IOException {
-        while (sym == '\t' || sym == '\r' || sym == '\n' || sym == '\b' || sym == '#' || sym == '/') {
-            if (sym == '\t' || sym == '\r' || sym == '\n' || sym == '\b') {
-                next();
-            } else if (sym == '#') {
-                reader.nextLine();
-            } else if (sym == '/') {
-                if (sym == '/') {
-                    reader.nextLine();
+        while (curChar == '\t' || curChar == '\r' || curChar == '\n' || curChar == ' ' || curChar == '#' || curChar == '/') {
+            if (curChar == '\t' || curChar == '\r' || curChar == '\n' || curChar == ' ') {
+                nextChar();
+            } else if (curChar == '#') {
+                nextLine();
+            } else if (curChar == '/') {
+                nextChar();
+                if (curChar == '/') {
+                    nextLine();
                 } else {
                     return Token.DIVIDE;
                 }
@@ -167,11 +186,11 @@ public class Scanner {
     public Token getNumberToken() throws IOException {
         boolean isNumber = false;
         this.val = 0;
-        while (sym >= '0' && sym <= '9') { // If digit, number
+        while (curChar >= '0' && curChar <= '9') { // If digit, number
             isNumber = true;
             // update val
-            this.val = 10 * this.val + sym - '0';
-            next();
+            this.val = 10 * this.val + curChar - '0';
+            nextChar();
         }
         return isNumber ? Token.NUMBER : null;
     }
@@ -179,17 +198,19 @@ public class Scanner {
     public Token getLetterToken() throws IOException{
         boolean isLetter = false;
         StringBuilder sb = null;
-        while ((sym >= 'A' && sym <= 'Z') || (sym >= 'a' && sym <= 'z') || (sym >= '0' && sym <= '9')) { // if letter or digit, ident or keyword
+        while (Character.isLetterOrDigit(curChar)) { // if letter or digit, ident or keyword
             // The first letter should be a letter, actually digit is already filtered when 
             // checking number token
-            if (!isLetter && (sym >= '0' && sym <= '9'))
+            if (!isLetter && Character.isDigit(curChar))
                 return null; // TODO maybe throw an exception here is a better choice
             isLetter = true;
-            if (sb == null)
-                sb = new StringBuilder(sym);
+            if (sb == null){
+                sb = new StringBuilder("");
+                sb.append(curChar);
+            }
             else
-                sb.append(sym);
-            next();
+                sb.append(curChar);
+            nextChar();
         }
         if (!isLetter) // no letter Token
             return null;
@@ -203,7 +224,7 @@ public class Scanner {
         if (!existIdents.contains(candidate))
             existIdents.add(candidate);
         this.id = existIdents.indexOf(candidate);
-        return Token.IDENTIRIER;
+        return Token.IDENTIFIER;
     }
     
     public int getLineNumber(){
