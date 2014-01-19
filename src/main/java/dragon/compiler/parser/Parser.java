@@ -1,7 +1,11 @@
 package dragon.compiler.parser;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
+import dragon.compiler.data.ControlFlowGraph;
+import dragon.compiler.data.Result;
 import dragon.compiler.data.SyntaxFormatException;
 import dragon.compiler.data.Token;
 import dragon.compiler.scanner.Scanner;
@@ -11,22 +15,27 @@ public class Parser {
     private Scanner scanner;
     private Token token;
 
-    public Parser(String path) throws IOException{
+    private IntermediateCodeGenerator icGen;
+    private ControlFlowGraph cfg;
+
+    public Parser(String path) throws IOException {
         this.scanner = new Scanner(path);
+        icGen = new IntermediateCodeGenerator();
+        cfg = new ControlFlowGraph();
     }
 
-    public void moveToNextToken() throws IOException{
+    public void moveToNextToken() throws IOException {
         token = scanner.getNextToken();
     }
-    
-    public void parse() throws IOException, SyntaxFormatException{
+
+    public void parse() throws Throwable {
         scanner.open();
         moveToNextToken();
         computation();
         scanner.close();
     }
-    
-    private void computation() throws IOException, SyntaxFormatException{
+
+    private void computation() throws Throwable {
         if (token == Token.MAIN) {
             moveToNextToken();
             while (token == Token.VAR || token == Token.ARRAY) {
@@ -52,12 +61,15 @@ public class Parser {
             throwFormatException("main expected in computation");
     }
 
-    private void designator() throws IOException, SyntaxFormatException{
+    private Result designator() throws IOException, SyntaxFormatException {
+        Result x = new Result();
+        List<Result> dimensions = new ArrayList<Result>();
         if (token == Token.IDENTIFIER) {
+            x.set(Result.Type.var, scanner.id);
             moveToNextToken();
             while (token == Token.BEGIN_BRACKET) {
                 moveToNextToken();
-                expression();
+                dimensions.add(expression());
                 if (token == Token.END_BRACKET)
                     moveToNextToken();
                 else
@@ -66,22 +78,27 @@ public class Parser {
         } else {
             throwFormatException("identifier expected in designator");
         }
+        if (dimensions.isEmpty())
+            return x;
+        else
+            return x; // TODO should be an array
     }
-    
-    private boolean isExpression(){
+
+    private boolean isExpression() {
         return token == Token.IDENTIFIER || token == Token.NUMBER || token == Token.BEGIN_PARENTHESIS
                 || token == Token.CALL;
     }
-    
-    private void factor() throws IOException, SyntaxFormatException{
+
+    private Result factor() throws IOException, SyntaxFormatException {
+        Result x = new Result();
         if (token == Token.IDENTIFIER) {
-            designator();
+            x = designator();
         } else if (token == Token.NUMBER) {
-            // TODO return a val here
+            x.set(Result.Type.constant, scanner.val);
             moveToNextToken();
         } else if (token == Token.BEGIN_PARENTHESIS) {
             moveToNextToken();
-            expression();
+            x = expression();
             if (token == Token.END_PARENTHESIS)
                 moveToNextToken();
             else
@@ -90,30 +107,38 @@ public class Parser {
             funcCall();
         } else
             throwFormatException("not a valid factor!");
+
+        return x;
     }
 
-    private void term() throws IOException, SyntaxFormatException{
-        factor();
+    private Result term() throws IOException, SyntaxFormatException {
+        Result x = factor();
         while (token == Token.TIMES || token == Token.DIVIDE) {
+            Token op = token;
             moveToNextToken();
-            factor();
+            icGen.compute(op, x, factor());
         }
+
+        return x;
     }
 
-    private void expression() throws IOException, SyntaxFormatException{
-        term();
+    private Result expression() throws IOException, SyntaxFormatException {
+        Result x = term();
         while (token == Token.PLUS || token == Token.MINUS) {
+            Token op = token;
             moveToNextToken();
-            term();
+            icGen.compute(op, x, term()); // x = x +/- y
         }
+
+        return x;
     }
 
-    private boolean isRelOp() throws IOException, SyntaxFormatException{
+    private boolean isRelOp() throws IOException, SyntaxFormatException {
         return token == Token.EQL || token == Token.NEQ || token == Token.LSS || token == Token.LEQ
                 || token == Token.GRE || token == Token.GEQ;
     }
 
-    private void relation() throws IOException, SyntaxFormatException{
+    private void relation() throws IOException, SyntaxFormatException {
         expression();
         if (isRelOp()) {
             moveToNextToken();
@@ -122,13 +147,14 @@ public class Parser {
             throwFormatException("relOp expected in relation");
     }
 
-    private void assignment() throws IOException, SyntaxFormatException{
+    private void assignment() throws Throwable {
         if (token == Token.LET) {
             moveToNextToken();
-            designator();
+            Result x = designator();
             if (token == Token.BECOMETO) {
                 moveToNextToken();
-                expression();
+                Result y = expression();
+                icGen.assign(x, y);
             } else {
                 throwFormatException("<- expected in assignment");
             }
@@ -136,10 +162,12 @@ public class Parser {
             throwFormatException("let expected in assignment");
     }
 
-    private void funcCall() throws IOException, SyntaxFormatException{
+    private void funcCall() throws IOException, SyntaxFormatException {
+        Result x = new Result();
         if (token == Token.CALL) {
             moveToNextToken();
             if (token == Token.IDENTIFIER) {
+                x.set(Result.Type.var, scanner.id); // x is a func ident in funcCall
                 moveToNextToken();
                 if (token == Token.BEGIN_PARENTHESIS) {
                     moveToNextToken();
@@ -160,7 +188,7 @@ public class Parser {
         }
     }
 
-    private void ifStatement() throws IOException, SyntaxFormatException{
+    private void ifStatement() throws Throwable {
         if (token == Token.IF) {
             moveToNextToken();
             relation();
@@ -181,7 +209,7 @@ public class Parser {
             throwFormatException("if expected in ifStatement");
     }
 
-    private void whileStatement() throws IOException, SyntaxFormatException{
+    private void whileStatement() throws Throwable {
         if (token == Token.WHILE) {
             moveToNextToken();
             relation();
@@ -198,7 +226,7 @@ public class Parser {
             throwFormatException("while expected in whileStatement");
     }
 
-    private void returnStatement() throws IOException, SyntaxFormatException{
+    private void returnStatement() throws IOException, SyntaxFormatException {
         if (token == Token.RETURN) {
             moveToNextToken();
             if (isExpression()) { // expression -> term -> factor -> designator -> identifier
@@ -213,7 +241,7 @@ public class Parser {
                 || token == Token.RETURN;
     }
 
-    private void statement() throws IOException, SyntaxFormatException{
+    private void statement() throws Throwable {
         if (token == Token.LET) { // assignment
             assignment();
         } else if (token == Token.CALL) { // funcCall
@@ -228,7 +256,7 @@ public class Parser {
             throwFormatException("not a valid statement");
     }
 
-    private void statSequence() throws IOException, SyntaxFormatException{
+    private void statSequence() throws Throwable {
         statement();
         while (token == Token.SEMICOMA) {
             moveToNextToken();
@@ -236,7 +264,7 @@ public class Parser {
         }
     }
 
-    private void typeDecl() throws IOException, SyntaxFormatException{
+    private void typeDecl() throws IOException, SyntaxFormatException {
         if (token == Token.VAR) {
             // TODO
             moveToNextToken();
@@ -246,8 +274,9 @@ public class Parser {
             while (token == Token.BEGIN_BRACKET) {
                 delDimension = true;
                 moveToNextToken();
+                Result x = new Result(); // x is a dimension in typeDecl
                 if (token == Token.NUMBER) {
-                    // TODO return val
+                    x.set(Result.Type.constant, scanner.val);
                     moveToNextToken();
                 } else
                     throwFormatException("number expected in array declare");
@@ -262,13 +291,15 @@ public class Parser {
             throwFormatException("not a valid typeDecl");
     }
 
-    private void varDecl() throws IOException, SyntaxFormatException{
+    private Result varDecl() throws IOException, SyntaxFormatException {
+        Result x = new Result();
         typeDecl();
         if (token == Token.IDENTIFIER) {
+            x.set(Result.Type.var, scanner.id); // x is varName in varDecl
             moveToNextToken();
             while (token == Token.COMMA) {
                 moveToNextToken();
-                if (token == Token.IDENTIFIER)
+                if (token == Token.IDENTIFIER) // multiple varNames
                     moveToNextToken();
                 else
                     throwFormatException("identifier expeced in varDecl");
@@ -279,12 +310,16 @@ public class Parser {
                 throwFormatException("; expected in varDecl");
         } else
             throwFormatException("not a valid varDecl");
+
+        return x;
     }
 
-    private void funcDecl() throws IOException, SyntaxFormatException{
+    private Result funcDecl() throws Throwable {
+        Result x = new Result();
         if (token == Token.FUNCTION || token == Token.PROCEDURE) {
             moveToNextToken();
             if (token == Token.IDENTIFIER) {
+                x.set(Result.Type.var, scanner.id);
                 moveToNextToken();
                 if (token == Token.BEGIN_PARENTHESIS) { // formalParam
                     formalParam();
@@ -302,16 +337,20 @@ public class Parser {
                 throwFormatException("identifier expected after function/procedure in funcDecl");
         } else
             throwFormatException("not a valid funcDecl");
+
+        return x;
     }
 
-    private void formalParam() throws IOException, SyntaxFormatException{
+    private Result formalParam() throws IOException, SyntaxFormatException {
+        Result x = new Result();
         if (token == Token.BEGIN_PARENTHESIS) {
             moveToNextToken();
-            if (token == Token.IDENTIFIER) {
+            if (token == Token.IDENTIFIER) { // x is paramName in formalParam
+                x.set(Result.Type.var, scanner.id);
                 moveToNextToken();
                 while (token == Token.COMMA) {
                     moveToNextToken();
-                    if (token == Token.IDENTIFIER) {
+                    if (token == Token.IDENTIFIER) { // multiple paramNames
                         moveToNextToken();
                     } else
                         throwFormatException("identifier expeced after , in formalParam");
@@ -323,33 +362,35 @@ public class Parser {
                 throwFormatException(") expected in formalParam");
         } else
             throwFormatException("not a valid formalParam");
+
+        return x;
     }
- 
-    private void funcBody() throws IOException, SyntaxFormatException {
-        while(token == Token.VAR || token == Token.ARRAY){
+
+    private void funcBody() throws Throwable {
+        while (token == Token.VAR || token == Token.ARRAY) {
             varDecl();
         }
-        if(token == Token.BEGIN_BRACE){
+        if (token == Token.BEGIN_BRACE) {
             moveToNextToken();
-            if(isStatement()){ // statSequence -> statement
+            if (isStatement()) { // statSequence -> statement
                 statSequence();
             }
-            if(token == Token.END_BRACE){
+            if (token == Token.END_BRACE) {
                 moveToNextToken();
             } else
                 throwFormatException("} expected after { in funcBody");
         } else
             throwFormatException("{ expected in funcBody");
     }
-    
-    private void throwFormatException(String string)
-            throws SyntaxFormatException {
+
+    private void throwFormatException(String string) throws SyntaxFormatException {
         string = "Parser error: Line " + scanner.getLineNumber() + ": " + string;
         throw new SyntaxFormatException(string);
     }
-    
-    public static void main(String[] args) throws Exception {
-        Parser ps = new Parser("src/test/resources/testprogs/test014.txt");
+
+    public static void main(String[] args) throws Throwable {
+        Parser ps = new Parser("src/test/resources/testprogs/self/expression.txt");
         ps.parse();
+        ps.icGen.printIntermediateCode();
     }
 }

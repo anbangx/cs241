@@ -49,6 +49,7 @@ public class Reader {
 	
    public Character getCurrentChar() {
         if (line == null) {
+            // trick to show the end of the file.
             return '~';
         }
         if (charPosition >= line.length()) {

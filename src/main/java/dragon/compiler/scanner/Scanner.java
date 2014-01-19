@@ -12,8 +12,8 @@ public class Scanner {
     private Reader reader;
     private Character curChar;
 
-    private int val;
-    private int id;
+    public int val;
+    public int id;
 
     private ArrayList<String> existIdents; // keep current identIdx and List[existidents] to save space 
 

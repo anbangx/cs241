@@ -10,7 +10,7 @@ import dragon.compiler.data.SyntaxFormatException;
 public class ParserTest {
 
     @Test
-    public void test() throws IOException {
+    public void test() throws Throwable {
         for (File file : new File("src/test/resources/testprogs").listFiles()) {
             if (!file.isFile()) {
                 continue;
