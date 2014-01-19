@@ -1,0 +1,15 @@
+//Simple parsing test
+main 
+var x, y, z;
+function foo( );
+var a;
+{
+	let a <- 3;
+	return a
+};
+{
+    let x <- 1; 
+    let y <- 2;
+    let z <- x + y * 3 + 5;
+    let b <- call foo
+}.
