@@ -2,7 +2,7 @@ package dragon.compiler.data;
 
 public class Instruction {
     private static int pc = 0;
-    private int Id;
+    private int selfPC;
     public static final int neg = 0;
     public static final int add = 1;
     public static final int sub = 2;
@@ -69,7 +69,7 @@ public class Instruction {
         this.operator = op;
         this.result1 = result1;
         this.result2 = result2;
-        this.Id = pc;
+        this.selfPC = pc;
         Instruction.pc++;
     }
     
@@ -81,4 +81,29 @@ public class Instruction {
 
         return sb.toString();
     }
+
+    public static int getPC() {
+        return pc;
+    }
+
+    public static void setPC(int pc) {
+        Instruction.pc = pc;
+    }
+    
+    public int getSelfPC() {
+        return selfPC;
+    }
+
+    public void setSelfPC(int selfPC) {
+        this.selfPC = selfPC;
+    }
+
+    public Result getResult2() {
+        return result2;
+    }
+
+    public void setResult2(Result result2) {
+        this.result2 = result2;
+    }
+    
 }

@@ -22,5 +22,12 @@ public class BasicBlock {
     public void setInstructions(List<Instruction> instructions) {
         this.instructions = instructions;
     }
-
+    
+    public Instruction findInstruction(int index){
+        for(Instruction i : instructions){
+            if(i.getSelfPC() == index)
+                return i;
+        }
+        return null;
+    }
 }

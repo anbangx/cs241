@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import dragon.compiler.data.ControlFlowGraph;
+import dragon.compiler.data.Function;
+import dragon.compiler.data.Instruction;
 import dragon.compiler.data.Result;
 import dragon.compiler.data.SyntaxFormatException;
 import dragon.compiler.data.Token;
@@ -39,7 +41,7 @@ public class Parser {
         if (token == Token.MAIN) {
             moveToNextToken();
             while (token == Token.VAR || token == Token.ARRAY) {
-                varDecl();
+                varDecl(null); // pass null as function because it is main
             }
             while (token == Token.FUNCTION || token == Token.PROCEDURE) {
                 funcDecl();
@@ -138,13 +140,18 @@ public class Parser {
                 || token == Token.GRE || token == Token.GEQ;
     }
 
-    private void relation() throws IOException, SyntaxFormatException {
-        expression();
+    private Result relation() throws IOException, SyntaxFormatException {
+        Result x = expression();
         if (isRelOp()) {
+            Token op = token;
             moveToNextToken();
-            expression();
+            Result y = expression();
+            icGen.compute(op, x, y);
+            x.kind = Result.Type.condition; x.cc = op; x.fixuplocation = 0;
         } else
             throwFormatException("relOp expected in relation");
+        
+        return x;
     }
 
     private void assignment() throws Throwable {
@@ -191,16 +198,23 @@ public class Parser {
     private void ifStatement() throws Throwable {
         if (token == Token.IF) {
             moveToNextToken();
-            relation();
+            Result follow = new Result(); follow.fixuplocation = 0;
+            Result x = relation();
+            icGen.condNegBraFwd(x);
             if (token == Token.THEN) {
                 moveToNextToken();
                 statSequence();
                 if (token == Token.ELSE) {
                     moveToNextToken();
+                    icGen.unCondBraFwd(follow);
+                    icGen.fixup(x.fixuplocation);
                     statSequence();
+                } else{
+                    icGen.fixup(x.fixuplocation);
                 }
                 if (token == Token.FI) {
                     moveToNextToken();
+                    icGen.fixAll(follow.fixuplocation);
                 } else
                     throwFormatException("fi expected in ifStatement");
             } else
@@ -212,10 +226,14 @@ public class Parser {
     private void whileStatement() throws Throwable {
         if (token == Token.WHILE) {
             moveToNextToken();
-            relation();
+            int loopLocation = Instruction.getPC();
+            Result x =relation();
+            icGen.condNegBraFwd(x);
             if (token == Token.DO) {
                 moveToNextToken();
                 statSequence();
+                icGen.bb.generateIntermediateCode(Instruction.bra, null, Result.makeBranch(loopLocation));
+                icGen.fixup(x.fixuplocation);
                 if (token == Token.OD) {
                     moveToNextToken();
                 } else
@@ -291,11 +309,13 @@ public class Parser {
             throwFormatException("not a valid typeDecl");
     }
 
-    private Result varDecl() throws IOException, SyntaxFormatException {
+    private Result varDecl(Function function) throws Throwable {
         Result x = new Result();
         typeDecl();
         if (token == Token.IDENTIFIER) {
             x.set(Result.Type.var, scanner.id); // x is varName in varDecl
+            /** declare variable **/
+            icGen.declareVariable(x, function);
             moveToNextToken();
             while (token == Token.COMMA) {
                 moveToNextToken();
@@ -314,19 +334,21 @@ public class Parser {
         return x;
     }
 
-    private Result funcDecl() throws Throwable {
-        Result x = new Result();
+    private void funcDecl() throws Throwable {
         if (token == Token.FUNCTION || token == Token.PROCEDURE) {
             moveToNextToken();
             if (token == Token.IDENTIFIER) {
+                Result x = new Result();
                 x.set(Result.Type.var, scanner.id);
+                /** declare function **/
+                Function function = icGen.declareFunction(x);
                 moveToNextToken();
                 if (token == Token.BEGIN_PARENTHESIS) { // formalParam
-                    formalParam();
+                    formalParam(function);
                 }
                 if (token == Token.SEMICOMA) {
                     moveToNextToken();
-                    funcBody();
+                    funcBody(function);
                     if (token == Token.SEMICOMA) {
                         moveToNextToken();
                     } else
@@ -337,16 +359,16 @@ public class Parser {
                 throwFormatException("identifier expected after function/procedure in funcDecl");
         } else
             throwFormatException("not a valid funcDecl");
-
-        return x;
     }
 
-    private Result formalParam() throws IOException, SyntaxFormatException {
+    private Result formalParam(Function function) throws Throwable {
         Result x = new Result();
         if (token == Token.BEGIN_PARENTHESIS) {
             moveToNextToken();
             if (token == Token.IDENTIFIER) { // x is paramName in formalParam
                 x.set(Result.Type.var, scanner.id);
+                /** declare variable **/
+                icGen.declareVariable(x, function);
                 moveToNextToken();
                 while (token == Token.COMMA) {
                     moveToNextToken();
@@ -366,9 +388,9 @@ public class Parser {
         return x;
     }
 
-    private void funcBody() throws Throwable {
+    private void funcBody(Function function) throws Throwable {
         while (token == Token.VAR || token == Token.ARRAY) {
-            varDecl();
+            varDecl(function);
         }
         if (token == Token.BEGIN_BRACE) {
             moveToNextToken();

@@ -2,7 +2,7 @@ package dragon.compiler.data;
 
 public class Result {
     public enum Type{
-        unknown, constant, var, reg, condition
+        unknown, constant, var, reg, condition, branch
     }
 //    public static final int unknown = 0;
 //    public static final int constant = 1;
@@ -14,6 +14,10 @@ public class Result {
     public int value; // value if it is a constant  
     public int address; // address if it is a variable
     public int regno; // register number if it is a reg 
+    public int fixuplocation;
+    public Token cc;
+//    public BasicBlock bb; // the target block of the branch
+    public int targetLine;
     
     public Result(){
     }
@@ -51,6 +55,27 @@ public class Result {
         }
     }
     
+    public static Result makeConstant(int value){
+        Result x = new Result();
+        x.set(Result.Type.constant, value);
+        return x;
+    }
+    
+    public static Result makeBranch(int targetLine){
+        Result x = new Result();
+        x.kind = Result.Type.branch;
+        x.targetLine = targetLine;
+        return x;
+    }
+    
+    public int getTargetLine() {
+        return targetLine;
+    }
+
+    public void setTargetLine(int targetLine) {
+        this.targetLine = targetLine;
+    }
+
     public String toString(){
         StringBuilder sb = new StringBuilder("");
         switch(kind){
