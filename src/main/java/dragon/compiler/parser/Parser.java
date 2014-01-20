@@ -420,7 +420,7 @@ public class Parser {
     }
 
     public static void main(String[] args) throws Throwable {
-        Parser ps = new Parser("src/test/resources/testprogs/self/if.txt");
+        Parser ps = new Parser("src/test/resources/testprogs/self/while.txt");
         ps.parse();
         ps.icGen.printIntermediateCode();
     }

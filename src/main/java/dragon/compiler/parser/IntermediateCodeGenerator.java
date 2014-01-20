@@ -155,7 +155,7 @@ public class IntermediateCodeGenerator {
     }
 
     public void fixAll(int loc) {
-        while (loc != 0) {
+        while (loc != -1) {
             int next = bb.findInstruction(loc).getResult2().getTargetLine();
             fixup(loc);
             loc = next;
