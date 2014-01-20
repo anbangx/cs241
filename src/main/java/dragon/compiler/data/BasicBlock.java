@@ -30,4 +30,12 @@ public class BasicBlock {
         }
         return null;
     }
+    
+    public String toString(){
+        StringBuilder sb = new StringBuilder("");
+        for(Instruction i : instructions){
+            sb.append(i + "\n");
+        }
+        return sb.toString();
+    }
 }

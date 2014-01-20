@@ -1,7 +1,7 @@
 package dragon.compiler.data;
 
 public class Instruction {
-    private static int pc = 0;
+    private static int pc = 1;
     private int selfPC;
     public static final int neg = 0;
     public static final int add = 1;
@@ -46,6 +46,8 @@ public class Instruction {
                 return "mul";
             case div:
                 return "div";
+            case cmp:
+                return "cmp";
             case adda:
                 return "adda";
             case load:
@@ -56,6 +58,22 @@ public class Instruction {
                 return "move";
             case phi:
                 return "phi";
+            case end:
+                return "end";
+            case bra:
+                return "bra";
+            case bne:
+                return "bne";
+            case beq:
+                return "beq";
+            case ble:
+                return "ble";
+            case blt:
+                return "blt";
+            case bge:
+                return "bge";
+            case bgt:
+                return "bgt";   
             default:
                 return "";
         }
@@ -75,10 +93,14 @@ public class Instruction {
     
     public String toString(){
         StringBuilder sb = new StringBuilder("");
+        sb.append(selfPC + " ");
         sb.append(verbose(this.operator) + " ");
-        sb.append(result1.toString() + " ");
-        sb.append(result2.toString());
-
+        if(this.operator >= bra && this.operator <= bgt){
+            sb.append(result2.toString());
+        } else{
+            sb.append(result1.toString() + " ");
+            sb.append(result2.toString());
+        }
         return sb.toString();
     }
 

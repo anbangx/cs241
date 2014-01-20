@@ -14,21 +14,22 @@ public class IntermediateCodeGenerator {
 
     BasicBlock bb;
 
-    private RegisterAllocator regAllocator;
+    private RegisterAllocator registerAllocator;
     private HashSet<Integer> existedFunctions;
     private HashMap<Token, Integer> arithmeticOpCode;
     private HashMap<Token, Integer> negatedBranchOpCode;
 
     public IntermediateCodeGenerator() {
-        bb = new BasicBlock();
+        this.bb = new BasicBlock();
+        this.registerAllocator = new RegisterAllocator();
+        this.existedFunctions = new HashSet<Integer>();
         this.arithmeticOpCode = new HashMap<Token, Integer>();
-        regAllocator = new RegisterAllocator();
-        existedFunctions = new HashSet<Integer>();
+        this.negatedBranchOpCode = new HashMap<Token, Integer>();
 
-        arithmeticOpCode.put(Token.TIMES, Instruction.mul);
-        arithmeticOpCode.put(Token.DIVIDE, Instruction.div);
         arithmeticOpCode.put(Token.PLUS, Instruction.add);
         arithmeticOpCode.put(Token.MINUS, Instruction.sub);
+        arithmeticOpCode.put(Token.TIMES, Instruction.mul);
+        arithmeticOpCode.put(Token.DIVIDE, Instruction.div);
 
         negatedBranchOpCode.put(Token.EQL, Instruction.bne);
         negatedBranchOpCode.put(Token.NEQ, Instruction.beq);
@@ -38,39 +39,62 @@ public class IntermediateCodeGenerator {
         negatedBranchOpCode.put(Token.GEQ, Instruction.blt);
     }
 
-    public void compute(Token op, Result x, Result y) {
+    public void load(Result x) {
+        if (x.kind == Result.Type.constant) {
+            x.kind = Result.Type.reg;
+            if (x.value == 0)
+                x.regno = 0;
+            else {
+                x.regno = registerAllocator.allocateReg();
+                // TODO put into assembler format, but not addi
+                //                generateIntermediateCode(Instruction);
+            }
+        } else if (x.kind == Result.Type.var) {
+            x.kind = Result.Type.reg;
+            x.regno = registerAllocator.allocateReg();
+            //            generateIntermediateCode(Instruction.load, x.regno, );
+        }
+    }
+
+    public void computeArithmeticOp(Token op, Result x, Result y) {
         if (x.kind == Result.Type.constant && y.kind == Result.Type.constant) {
-            switch (op) {
-                case PLUS:
+            switch (arithmeticOpCode.get(op)) {
+                case Instruction.cmp:
+                    break;
+                case Instruction.add:
                     x.value += y.value;
                     break;
-                case MINUS:
+                case Instruction.sub:
                     x.value -= y.value;
                     break;
-                case TIMES:
+                case Instruction.mul:
                     x.value *= y.value;
                     break;
-                case DIVIDE:
+                case Instruction.div:
                     x.value /= y.value;
                     break;
             }
         } else {
-            regAllocator.load(x);
+            load(x);
             if (y.kind == Result.Type.constant) {
                 bb.generateIntermediateCode(arithmeticOpCode.get(op), x, y);
             } else {
-                regAllocator.load(y);
+                load(y);
                 bb.generateIntermediateCode(arithmeticOpCode.get(op), x, y);
-                regAllocator.deAllocate(y.regno);
+                registerAllocator.deAllocate(y.regno);
             }
         }
     }
 
-    public void assign(Result x, Result y) throws Throwable {
-        if (x.kind == Result.Type.constant) {
+    public void computeCmpOp(int opCode, Result left, Result right) {
+        bb.generateIntermediateCode(opCode, left, right);
+    }
+
+    public void assign(Result variable, Result assignedValue) throws Throwable {
+        if (variable.kind == Result.Type.constant) {
             throw new Exception("left Result cannot be constant");
         }
-        bb.generateIntermediateCode(Instruction.move, x, y);
+        bb.generateIntermediateCode(Instruction.move, assignedValue, variable);
         //look up the constant table, if exists the same constant, use previous ssa
         //        if(y.kind == Result.Type.constant) {
         //            if(!VariableManager.constantExist(y.val)) {

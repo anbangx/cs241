@@ -80,13 +80,19 @@ public class Result {
         StringBuilder sb = new StringBuilder("");
         switch(kind){
             case constant:
-                sb.append("const: " + value);
+                sb.append("#" + value);
                 break;
             case var:
-                sb.append("var: " + address);
+                sb.append("var_" + address);
                 break;
             case reg:
-                sb.append("reg: " + regno);
+                sb.append("r" + regno);
+                break;
+            case condition:
+                sb.append(fixuplocation);
+                break;
+            case branch:
+                sb.append(targetLine);
                 break;
             default:
                 return "";

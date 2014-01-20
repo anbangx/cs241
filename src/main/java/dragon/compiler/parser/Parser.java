@@ -22,8 +22,8 @@ public class Parser {
 
     public Parser(String path) throws IOException {
         this.scanner = new Scanner(path);
-        icGen = new IntermediateCodeGenerator();
-        cfg = new ControlFlowGraph();
+        this.icGen = new IntermediateCodeGenerator();
+        this.cfg = new ControlFlowGraph();
     }
 
     public void moveToNextToken() throws IOException {
@@ -118,7 +118,7 @@ public class Parser {
         while (token == Token.TIMES || token == Token.DIVIDE) {
             Token op = token;
             moveToNextToken();
-            icGen.compute(op, x, factor());
+            icGen.computeArithmeticOp(op, x, factor());
         }
 
         return x;
@@ -129,7 +129,7 @@ public class Parser {
         while (token == Token.PLUS || token == Token.MINUS) {
             Token op = token;
             moveToNextToken();
-            icGen.compute(op, x, term()); // x = x +/- y
+            icGen.computeArithmeticOp(op, x, term()); // x = x +/- y
         }
 
         return x;
@@ -141,27 +141,31 @@ public class Parser {
     }
 
     private Result relation() throws IOException, SyntaxFormatException {
-        Result x = expression();
+        Result condition = null;
+        Result left = expression();
         if (isRelOp()) {
             Token op = token;
             moveToNextToken();
-            Result y = expression();
-            icGen.compute(op, x, y);
-            x.kind = Result.Type.condition; x.cc = op; x.fixuplocation = 0;
+            Result right = expression();
+            icGen.computeCmpOp(Instruction.cmp, left, right);
+            condition = new Result();
+            condition.kind = Result.Type.condition;
+            condition.cc = op;
+            condition.fixuplocation = 0;
         } else
             throwFormatException("relOp expected in relation");
-        
-        return x;
+
+        return condition;
     }
 
     private void assignment() throws Throwable {
         if (token == Token.LET) {
             moveToNextToken();
-            Result x = designator();
+            Result variable = designator();
             if (token == Token.BECOMETO) {
                 moveToNextToken();
-                Result y = expression();
-                icGen.assign(x, y);
+                Result assignedValue = expression();
+                icGen.assign(variable, assignedValue);
             } else {
                 throwFormatException("<- expected in assignment");
             }
@@ -198,7 +202,8 @@ public class Parser {
     private void ifStatement() throws Throwable {
         if (token == Token.IF) {
             moveToNextToken();
-            Result follow = new Result(); follow.fixuplocation = 0;
+            Result follow = new Result();
+            follow.fixuplocation = 0;
             Result x = relation();
             icGen.condNegBraFwd(x);
             if (token == Token.THEN) {
@@ -209,7 +214,7 @@ public class Parser {
                     icGen.unCondBraFwd(follow);
                     icGen.fixup(x.fixuplocation);
                     statSequence();
-                } else{
+                } else {
                     icGen.fixup(x.fixuplocation);
                 }
                 if (token == Token.FI) {
@@ -227,7 +232,7 @@ public class Parser {
         if (token == Token.WHILE) {
             moveToNextToken();
             int loopLocation = Instruction.getPC();
-            Result x =relation();
+            Result x = relation();
             icGen.condNegBraFwd(x);
             if (token == Token.DO) {
                 moveToNextToken();
@@ -309,18 +314,24 @@ public class Parser {
             throwFormatException("not a valid typeDecl");
     }
 
-    private Result varDecl(Function function) throws Throwable {
-        Result x = new Result();
+    private void varDecl(Function function) throws Throwable {
+        Result x = null;
         typeDecl();
         if (token == Token.IDENTIFIER) {
+            x = new Result();
             x.set(Result.Type.var, scanner.id); // x is varName in varDecl
             /** declare variable **/
             icGen.declareVariable(x, function);
             moveToNextToken();
             while (token == Token.COMMA) {
                 moveToNextToken();
-                if (token == Token.IDENTIFIER) // multiple varNames
+                if (token == Token.IDENTIFIER){ // multiple varNames
+                    x = new Result();
+                    x.set(Result.Type.var, scanner.id); // x is varName in varDecl
+                    /** declare variable **/
+                    icGen.declareVariable(x, function);
                     moveToNextToken();
+                }
                 else
                     throwFormatException("identifier expeced in varDecl");
             }
@@ -330,8 +341,6 @@ public class Parser {
                 throwFormatException("; expected in varDecl");
         } else
             throwFormatException("not a valid varDecl");
-
-        return x;
     }
 
     private void funcDecl() throws Throwable {
@@ -411,7 +420,7 @@ public class Parser {
     }
 
     public static void main(String[] args) throws Throwable {
-        Parser ps = new Parser("src/test/resources/testprogs/self/expression.txt");
+        Parser ps = new Parser("src/test/resources/testprogs/self/if.txt");
         ps.parse();
         ps.icGen.printIntermediateCode();
     }
