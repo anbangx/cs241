@@ -67,7 +67,7 @@ public class Parser {
         Result x = new Result();
         List<Result> dimensions = new ArrayList<Result>();
         if (token == Token.IDENTIFIER) {
-            x.set(Result.Type.var, scanner.id);
+            x.set(Result.Type.var, scanner.id); x.setSSA(Instruction.getPC());
             moveToNextToken();
             while (token == Token.BEGIN_BRACKET) {
                 moveToNextToken();
@@ -420,7 +420,7 @@ public class Parser {
     }
 
     public static void main(String[] args) throws Throwable {
-        Parser ps = new Parser("src/test/resources/testprogs/self/while.txt");
+        Parser ps = new Parser("src/test/resources/testprogs/self/if.txt");
         ps.parse();
         ps.icGen.printIntermediateCode();
     }

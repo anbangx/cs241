@@ -75,11 +75,11 @@ public class IntermediateCodeGenerator {
                     break;
             }
         } else {
-            load(x);
+//            load(x);
             if (y.kind == Result.Type.constant) {
                 bb.generateIntermediateCode(arithmeticOpCode.get(op), x, y);
             } else {
-                load(y);
+//                load(y);
                 bb.generateIntermediateCode(arithmeticOpCode.get(op), x, y);
                 registerAllocator.deAllocate(y.regno);
             }
@@ -90,29 +90,11 @@ public class IntermediateCodeGenerator {
         bb.generateIntermediateCode(opCode, left, right);
     }
 
-    public void assign(Result variable, Result assignedValue) throws Throwable {
-        if (variable.kind == Result.Type.constant) {
-            throw new Exception("left Result cannot be constant");
-        }
-        bb.generateIntermediateCode(Instruction.move, assignedValue, variable);
-        //look up the constant table, if exists the same constant, use previous ssa
-        //        if(y.kind == Result.Type.constant) {
-        //            if(!VariableManager.constantExist(y.val)) {
-        //                VariableManager.addAssignment(Instruction.getPC(), x);
-        //                VariableManager.addConstant(y.val, x.ssa);
-        //            } else {
-        //                y.ssa = VariableManager.getSSAOfConstant(y.val);
-        //                VariableManager.addAssignment(Instruction.getPC(), x);
-        //            }
-        //        } else {
-        //            VariableManager.addAssignment(Instruction.getPC(), x);
-        //        }
-    }
-
     public void declareVariable(Result x, Function function) throws Throwable {
         if (x.kind != Result.Type.var)
             throw new Exception("The type of x should be var!");
         int varIndent = x.address;
+        x.setSSA(Instruction.getPC());
         if (function != null) {
             // add ident to local variable of the function
             function.getLocalVariables().add(varIndent);
@@ -136,6 +118,25 @@ public class IntermediateCodeGenerator {
             System.out.println("Function name duplicates!");
             return null;
         }
+    }
+    
+    public void assign(Result variable, Result assignedValue) throws Throwable {
+        if (variable.kind == Result.Type.constant) {
+            throw new Exception("left Result cannot be constant");
+        }
+        bb.generateIntermediateCode(Instruction.move, assignedValue, variable);
+        //look up the constant table, if exists the same constant, use previous ssa
+        //        if(y.kind == Result.Type.constant) {
+        //            if(!VariableManager.constantExist(y.val)) {
+        //                VariableManager.addAssignment(Instruction.getPC(), x);
+        //                VariableManager.addConstant(y.val, x.ssa);
+        //            } else {
+        //                y.ssa = VariableManager.getSSAOfConstant(y.val);
+        //                VariableManager.addAssignment(Instruction.getPC(), x);
+        //            }
+        //        } else {
+        //            VariableManager.addAssignment(Instruction.getPC(), x);
+        //        }
     }
 
     public void condNegBraFwd(Result x) {

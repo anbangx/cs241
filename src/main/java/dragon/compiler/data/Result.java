@@ -1,5 +1,7 @@
 package dragon.compiler.data;
 
+import dragon.compiler.scanner.Scanner;
+
 public class Result {
     public enum Type{
         unknown, constant, var, reg, condition, branch
@@ -13,6 +15,7 @@ public class Result {
     public Type kind; // const, var, reg, cond
     public int value; // value if it is a constant  
     public int address; // address if it is a variable
+    public SSA ssa; // ssa version if it is a variable
     public int regno; // register number if it is a reg 
     public int fixuplocation;
     public Token cc;
@@ -39,6 +42,10 @@ public class Result {
             default:
                 break;
         }
+    }
+    
+    public void setSSA(int version){
+        this.ssa = new SSA(version);
     }
     
     // value if it is a constant; address if it is a variable; register number if it is a reg 
@@ -83,7 +90,7 @@ public class Result {
                 sb.append("#" + value);
                 break;
             case var:
-                sb.append("var_" + address);
+                sb.append(Scanner.existIdents.get(address) + "_" + ssa.getVersion());
                 break;
             case reg:
                 sb.append("r" + regno);

@@ -1,5 +1,5 @@
 main
-var a, b;
+var a, b, c;
 {
 	let a <- 2;
 	let b <- 4;
@@ -8,5 +8,5 @@ var a, b;
 	else
 		let a <- a + 3
 	fi;
-	call OutputNum(a)
+	let c <- a
 }.

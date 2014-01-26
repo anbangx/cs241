@@ -15,7 +15,7 @@ public class Scanner {
     public int val;
     public int id;
 
-    private ArrayList<String> existIdents; // keep current identIdx and List[existidents] to save space 
+    public static ArrayList<String> existIdents; // keep current identIdx and List[existidents] to save space 
 
     // Constructor: open file and scan the first token into 'inputSym'
     public Scanner(String path) throws FileNotFoundException, IOException {
