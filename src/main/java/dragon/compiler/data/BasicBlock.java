@@ -6,7 +6,12 @@ import java.util.List;
 public class BasicBlock {
 
     private List<Instruction> instructions;
-
+    
+    private BasicBlock ifSuccessor;
+    private BasicBlock elseSuccessor;
+    //used in if-else statement for traversing CFG
+    private BasicBlock joinSuccessor;
+    
     public BasicBlock() {
         instructions = new ArrayList<Instruction>();
     }

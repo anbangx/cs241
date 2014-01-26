@@ -237,7 +237,7 @@ public class Parser {
             if (token == Token.DO) {
                 moveToNextToken();
                 statSequence();
-                icGen.bb.generateIntermediateCode(Instruction.bra, null, Result.makeBranch(loopLocation));
+                icGen.block.generateIntermediateCode(Instruction.bra, null, Result.makeBranch(loopLocation));
                 icGen.fixup(x.fixuplocation);
                 if (token == Token.OD) {
                     moveToNextToken();

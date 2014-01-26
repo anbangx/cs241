@@ -12,7 +12,7 @@ import dragon.compiler.register.RegisterAllocator;
 
 public class IntermediateCodeGenerator {
 
-    BasicBlock bb;
+    BasicBlock block;
 
     private RegisterAllocator registerAllocator;
     private HashSet<Integer> existedFunctions;
@@ -20,7 +20,7 @@ public class IntermediateCodeGenerator {
     private HashMap<Token, Integer> negatedBranchOpCode;
 
     public IntermediateCodeGenerator() {
-        this.bb = new BasicBlock();
+        this.block = new BasicBlock();
         this.registerAllocator = new RegisterAllocator();
         this.existedFunctions = new HashSet<Integer>();
         this.arithmeticOpCode = new HashMap<Token, Integer>();
@@ -77,17 +77,17 @@ public class IntermediateCodeGenerator {
         } else {
 //            load(x);
             if (y.kind == Result.Type.constant) {
-                bb.generateIntermediateCode(arithmeticOpCode.get(op), x, y);
+                block.generateIntermediateCode(arithmeticOpCode.get(op), x, y);
             } else {
 //                load(y);
-                bb.generateIntermediateCode(arithmeticOpCode.get(op), x, y);
+                block.generateIntermediateCode(arithmeticOpCode.get(op), x, y);
                 registerAllocator.deAllocate(y.regno);
             }
         }
     }
 
     public void computeCmpOp(int opCode, Result left, Result right) {
-        bb.generateIntermediateCode(opCode, left, right);
+        block.generateIntermediateCode(opCode, left, right);
     }
 
     public void declareVariable(Result x, Function function) throws Throwable {
@@ -104,7 +104,7 @@ public class IntermediateCodeGenerator {
         }
 
         Result defaultConstant = Result.makeConstant(0);
-        bb.generateIntermediateCode(Instruction.move, defaultConstant, x);
+        block.generateIntermediateCode(Instruction.move, defaultConstant, x);
     }
 
     public Function declareFunction(Result x) throws Exception {
@@ -124,7 +124,7 @@ public class IntermediateCodeGenerator {
         if (variable.kind == Result.Type.constant) {
             throw new Exception("left Result cannot be constant");
         }
-        bb.generateIntermediateCode(Instruction.move, assignedValue, variable);
+        block.generateIntermediateCode(Instruction.move, assignedValue, variable);
         //look up the constant table, if exists the same constant, use previous ssa
         //        if(y.kind == Result.Type.constant) {
         //            if(!VariableManager.constantExist(y.val)) {
@@ -141,30 +141,30 @@ public class IntermediateCodeGenerator {
 
     public void condNegBraFwd(Result x) {
         x.fixuplocation = Instruction.getPC();
-        bb.generateIntermediateCode(negatedBranchOpCode.get(x.cc), x, Result.makeBranch(-1));
+        block.generateIntermediateCode(negatedBranchOpCode.get(x.cc), x, Result.makeBranch(-1));
     }
 
     public void unCondBraFwd(Result follow) {
         Result branch = Result.makeBranch(-1);
         branch.fixuplocation = follow.fixuplocation;
-        bb.generateIntermediateCode(Instruction.bra, null, branch);
+        block.generateIntermediateCode(Instruction.bra, null, branch);
         follow.fixuplocation = Instruction.getPC() - 1;
     }
 
     public void fixup(int loc) {
-        bb.findInstruction(loc).getResult2().setTargetLine(Instruction.getPC());
+        block.findInstruction(loc).getResult2().setTargetLine(Instruction.getPC());
     }
 
     public void fixAll(int loc) {
         while (loc != -1) {
-            int next = bb.findInstruction(loc).getResult2().getTargetLine();
+            int next = block.findInstruction(loc).getResult2().getTargetLine();
             fixup(loc);
             loc = next;
         }
     }
 
     public void printIntermediateCode() {
-        for (Instruction instruction : bb.getInstructions()) {
+        for (Instruction instruction : block.getInstructions()) {
             System.out.println(instruction.toString());
         }
     }
