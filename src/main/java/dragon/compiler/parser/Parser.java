@@ -48,11 +48,12 @@ public class Parser {
             }
             if (token == Token.BEGIN_BRACE) {
                 moveToNextToken();
-                statSequence(cfg.getFirstBlock());
+                BasicBlock lastBlock = statSequence(cfg.getFirstBlock());
                 if (token == Token.END_BRACE) {
                     moveToNextToken();
                     if (token == Token.PERIOD) {
                         moveToNextToken();
+                        lastBlock.generateIntermediateCode(Instruction.end, null, null);
                     } else
                         throwFormatException(". expected in computation");
                 } else
@@ -230,16 +231,16 @@ public class Parser {
                 ifLastBlock = statSequence(curBlock.makeIfSuccessor());
                 if (token == Token.ELSE) {
                     moveToNextToken();
-                    icGen.unCondBraFwd(elseLastBlock, follow);
+                    icGen.unCondBraFwd(ifLastBlock, follow);
                     BasicBlock elseBlock = curBlock.makeElseSuccessor();
-                    icGen.fixup(x.fixuplocation, elseBlock);
+                    icGen.fixup(x.fixuplocation, elseBlock); // set target of NegBraFwd
                     elseLastBlock = statSequence(elseBlock);
                 } else {
                     icGen.fixup(x.fixuplocation, joinBlock);
                 }
                 if (token == Token.FI) {
                     moveToNextToken();
-                    icGen.fixAll(follow.fixuplocation, joinBlock);
+                    icGen.fixAll(follow.fixuplocation, joinBlock);  // set follow as target for all if and elseif
                     linkJoinBlock(curBlock, ifLastBlock, elseLastBlock, joinBlock);
                     
                     return joinBlock;
@@ -261,7 +262,7 @@ public class Parser {
             if (token == Token.DO) {
                 moveToNextToken();
                 statSequence(curBlock);
-                curBlock.generateIntermediateCode(Instruction.bra, null, Result.makeBranch(loopLocation));
+//                curBlock.generateIntermediateCode(Instruction.bra, null, Result.makeBranch(loopLocation));
 //                icGen.fixup(x.fixuplocation);
                 if (token == Token.OD) {
                     moveToNextToken();
@@ -312,7 +313,7 @@ public class Parser {
         BasicBlock lastBlock = statement(curBlock);
         while (token == Token.SEMICOMA) {
             moveToNextToken();
-            lastBlock = statement(curBlock);
+            lastBlock = statement(lastBlock);
         }
         return lastBlock;
     }
@@ -452,5 +453,6 @@ public class Parser {
     public static void main(String[] args) throws Throwable {
         Parser ps = new Parser("src/test/resources/testprogs/self/if.txt");
         ps.parse();
+        ps.cfg.printIntermediateCode();
     }
 }

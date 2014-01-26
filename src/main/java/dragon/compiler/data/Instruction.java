@@ -98,8 +98,8 @@ public class Instruction {
         if(this.operator >= bra && this.operator <= bgt){
             sb.append(result2.toString());
         } else{
-            sb.append(result1.toString() + " ");
-            sb.append(result2.toString());
+            sb.append(result1 != null ? result1.toString() + " " : "");
+            sb.append(result2 != null ? result2.toString() : "");
         }
         return sb.toString();
     }

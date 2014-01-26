@@ -138,23 +138,23 @@ public class IntermediateCodeGenerator {
 
     public void condNegBraFwd(BasicBlock curBlock, Result x) {
         x.fixuplocation = Instruction.getPC();
-        curBlock.generateIntermediateCode(negatedBranchOpCode.get(x.cc), x, Result.makeBranch(-1));
+        curBlock.generateIntermediateCode(negatedBranchOpCode.get(x.cc), x, Result.makeBranch(null));
     }
 
     public void unCondBraFwd(BasicBlock curBlock, Result follow) {
-        Result branch = Result.makeBranch(-1);
+        Result branch = Result.makeBranch(null);
         branch.fixuplocation = follow.fixuplocation;
         curBlock.generateIntermediateCode(Instruction.bra, null, branch);
         follow.fixuplocation = Instruction.getPC() - 1;
     }
 
-    public void fixup(int loc, BasicBlock block) {
-        block.findInstruction(loc).getResult2().setTargetLine(Instruction.getPC());
+    public void fixup(int loc, BasicBlock targetBlock) {
+        ControlFlowGraph.findInstruction(loc).getResult2().targetBlock = targetBlock;
     }
 
     public void fixAll(int loc, BasicBlock joinBlock) {
-        while (loc != -1) {
-            int next = joinBlock.findInstruction(loc).getResult2().getTargetLine();
+        while (loc != 0) {
+            int next = ControlFlowGraph.findInstruction(loc).getResult2().fixuplocation;
             fixup(loc, joinBlock);
             loc = next;
         }

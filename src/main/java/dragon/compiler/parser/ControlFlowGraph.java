@@ -20,12 +20,12 @@ public class ControlFlowGraph {
 //        this.firstBlock = firstBlock;
 //    }
     
-    private BasicBlock firstBlock;
-    private ArrayList<BasicBlock> blocks;
+    private static BasicBlock firstBlock;
+    public static ArrayList<BasicBlock> blocks;
     
     public ControlFlowGraph(){
+        blocks = new ArrayList<BasicBlock>();
         firstBlock = new BasicBlock();
-        this.blocks = new ArrayList<BasicBlock>();
     }
     
     public BasicBlock getFirstBlock() {
@@ -45,9 +45,20 @@ public class ControlFlowGraph {
         this.blocks = blocks;
     }
     
+    public static Instruction findInstruction(int index){
+        for(BasicBlock block : blocks){
+            if(block.findInstruction(index) != null)
+                return block.findInstruction(index);
+        }
+        return null;
+    }
+    
     public void printIntermediateCode() {
-        for (Instruction instruction : firstBlock.getInstructions()) {
-            System.out.println(instruction.toString());
+        for(BasicBlock block : blocks){
+            System.out.println("Block_" + block.getId() + "[");
+            for(Instruction i : block.getInstructions())
+                System.out.println(i.toString());
+            System.out.println("]");
         }
     }
 }

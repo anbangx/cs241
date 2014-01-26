@@ -3,8 +3,11 @@ package dragon.compiler.data;
 import java.util.ArrayList;
 import java.util.List;
 
-public class BasicBlock {
+import dragon.compiler.parser.ControlFlowGraph;
 
+public class BasicBlock {
+    
+    private int id;
     private List<Instruction> instructions;
     
     private BasicBlock ifSuccessor;
@@ -13,6 +16,8 @@ public class BasicBlock {
     private BasicBlock joinSuccessor;
     
     public BasicBlock() {
+        id = ControlFlowGraph.blocks.size() + 1;
+        ControlFlowGraph.blocks.add(this);
         instructions = new ArrayList<Instruction>();
     }
 
@@ -78,6 +83,14 @@ public class BasicBlock {
 
     public void setJoinSuccessor(BasicBlock joinSuccessor) {
         this.joinSuccessor = joinSuccessor;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
     }
     
 }

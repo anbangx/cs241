@@ -19,8 +19,7 @@ public class Result {
     public int regno; // register number if it is a reg 
     public int fixuplocation;
     public Token cc;
-//    public BasicBlock bb; // the target block of the branch
-    public int targetLine;
+    public BasicBlock targetBlock; // the target block of the branch
     
     public Result(){
     }
@@ -68,26 +67,19 @@ public class Result {
         return x;
     }
     
-    public static Result makeBranch(int targetLine){
+    public static Result makeBranch(BasicBlock targetBlock){
         Result x = new Result();
         x.kind = Result.Type.branch;
-        x.targetLine = targetLine;
+        x.targetBlock = targetBlock;
         return x;
     }
     
-    public int getTargetLine() {
-        return targetLine;
-    }
-
-    public void setTargetLine(int targetLine) {
-        this.targetLine = targetLine;
-    }
-
+    
     public String toString(){
         StringBuilder sb = new StringBuilder("");
         switch(kind){
             case constant:
-                sb.append("#" + value);
+                sb.append(value);
                 break;
             case var:
                 sb.append(Scanner.existIdents.get(address) + "_" + ssa.getVersion());
@@ -99,7 +91,7 @@ public class Result {
                 sb.append(fixuplocation);
                 break;
             case branch:
-                sb.append(targetLine);
+                sb.append(targetBlock != null ? "[" + targetBlock.getId() + "]": "-1");
                 break;
             default:
                 return "";
