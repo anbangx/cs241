@@ -5,11 +5,13 @@ import java.util.ArrayList;
 public class Function {
     
     private int funcIdent;
+    private BasicBlock funcBlock;
     private ArrayList<Integer> localVariables;
     private ArrayList<Integer> globalVariables;
     
     public Function(int funcIdent){
         this.funcIdent= funcIdent;
+        funcBlock = new BasicBlock();
         localVariables = new ArrayList<Integer>();
         globalVariables = new ArrayList<Integer>();
     }
@@ -28,6 +30,14 @@ public class Function {
 
     public void setFuncIdent(int funcIdent) {
         this.funcIdent = funcIdent;
+    }
+    
+    public BasicBlock getFuncBlock() {
+        return funcBlock;
+    }
+
+    public void setFuncBlock(BasicBlock funcBlock) {
+        this.funcBlock = funcBlock;
     }
 
     public ArrayList<Integer> getLocalVariables() {

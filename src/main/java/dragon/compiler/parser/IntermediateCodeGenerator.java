@@ -12,15 +12,12 @@ import dragon.compiler.register.RegisterAllocator;
 
 public class IntermediateCodeGenerator {
 
-    BasicBlock block;
-
     private RegisterAllocator registerAllocator;
     private HashSet<Integer> existedFunctions;
     private HashMap<Token, Integer> arithmeticOpCode;
     private HashMap<Token, Integer> negatedBranchOpCode;
 
     public IntermediateCodeGenerator() {
-        this.block = new BasicBlock();
         this.registerAllocator = new RegisterAllocator();
         this.existedFunctions = new HashSet<Integer>();
         this.arithmeticOpCode = new HashMap<Token, Integer>();
@@ -56,7 +53,7 @@ public class IntermediateCodeGenerator {
         }
     }
 
-    public void computeArithmeticOp(Token op, Result x, Result y) {
+    public void computeArithmeticOp(BasicBlock curBlock, Token op, Result x, Result y) {
         if (x.kind == Result.Type.constant && y.kind == Result.Type.constant) {
             switch (arithmeticOpCode.get(op)) {
                 case Instruction.cmp:
@@ -77,20 +74,20 @@ public class IntermediateCodeGenerator {
         } else {
 //            load(x);
             if (y.kind == Result.Type.constant) {
-                block.generateIntermediateCode(arithmeticOpCode.get(op), x, y);
+                curBlock.generateIntermediateCode(arithmeticOpCode.get(op), x, y);
             } else {
 //                load(y);
-                block.generateIntermediateCode(arithmeticOpCode.get(op), x, y);
+                curBlock.generateIntermediateCode(arithmeticOpCode.get(op), x, y);
                 registerAllocator.deAllocate(y.regno);
             }
         }
     }
 
-    public void computeCmpOp(int opCode, Result left, Result right) {
-        block.generateIntermediateCode(opCode, left, right);
+    public void computeCmpOp(BasicBlock curBlock, int opCode, Result left, Result right) {
+        curBlock.generateIntermediateCode(opCode, left, right);
     }
 
-    public void declareVariable(Result x, Function function) throws Throwable {
+    public void declareVariable(BasicBlock curBlock, Result x, Function function) throws Throwable {
         if (x.kind != Result.Type.var)
             throw new Exception("The type of x should be var!");
         int varIndent = x.address;
@@ -104,7 +101,7 @@ public class IntermediateCodeGenerator {
         }
 
         Result defaultConstant = Result.makeConstant(0);
-        block.generateIntermediateCode(Instruction.move, defaultConstant, x);
+        curBlock.generateIntermediateCode(Instruction.move, defaultConstant, x);
     }
 
     public Function declareFunction(Result x) throws Exception {
@@ -120,11 +117,11 @@ public class IntermediateCodeGenerator {
         }
     }
     
-    public void assign(Result variable, Result assignedValue) throws Throwable {
+    public void assign(BasicBlock curBlock, Result variable, Result assignedValue) throws Throwable {
         if (variable.kind == Result.Type.constant) {
             throw new Exception("left Result cannot be constant");
         }
-        block.generateIntermediateCode(Instruction.move, assignedValue, variable);
+        curBlock.generateIntermediateCode(Instruction.move, assignedValue, variable);
         //look up the constant table, if exists the same constant, use previous ssa
         //        if(y.kind == Result.Type.constant) {
         //            if(!VariableManager.constantExist(y.val)) {
@@ -139,33 +136,28 @@ public class IntermediateCodeGenerator {
         //        }
     }
 
-    public void condNegBraFwd(Result x) {
+    public void condNegBraFwd(BasicBlock curBlock, Result x) {
         x.fixuplocation = Instruction.getPC();
-        block.generateIntermediateCode(negatedBranchOpCode.get(x.cc), x, Result.makeBranch(-1));
+        curBlock.generateIntermediateCode(negatedBranchOpCode.get(x.cc), x, Result.makeBranch(-1));
     }
 
-    public void unCondBraFwd(Result follow) {
+    public void unCondBraFwd(BasicBlock curBlock, Result follow) {
         Result branch = Result.makeBranch(-1);
         branch.fixuplocation = follow.fixuplocation;
-        block.generateIntermediateCode(Instruction.bra, null, branch);
+        curBlock.generateIntermediateCode(Instruction.bra, null, branch);
         follow.fixuplocation = Instruction.getPC() - 1;
     }
 
-    public void fixup(int loc) {
+    public void fixup(int loc, BasicBlock block) {
         block.findInstruction(loc).getResult2().setTargetLine(Instruction.getPC());
     }
 
-    public void fixAll(int loc) {
+    public void fixAll(int loc, BasicBlock joinBlock) {
         while (loc != -1) {
-            int next = block.findInstruction(loc).getResult2().getTargetLine();
-            fixup(loc);
+            int next = joinBlock.findInstruction(loc).getResult2().getTargetLine();
+            fixup(loc, joinBlock);
             loc = next;
         }
     }
 
-    public void printIntermediateCode() {
-        for (Instruction instruction : block.getInstructions()) {
-            System.out.println(instruction.toString());
-        }
-    }
 }

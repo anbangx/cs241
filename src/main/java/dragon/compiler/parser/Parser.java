@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import dragon.compiler.data.ControlFlowGraph;
+import dragon.compiler.data.BasicBlock;
 import dragon.compiler.data.Function;
 import dragon.compiler.data.Instruction;
 import dragon.compiler.data.Result;
@@ -41,14 +41,14 @@ public class Parser {
         if (token == Token.MAIN) {
             moveToNextToken();
             while (token == Token.VAR || token == Token.ARRAY) {
-                varDecl(null); // pass null as function because it is main
+                varDecl(cfg.getFirstBlock(), null); // pass null as function because it is main
             }
             while (token == Token.FUNCTION || token == Token.PROCEDURE) {
                 funcDecl();
             }
             if (token == Token.BEGIN_BRACE) {
                 moveToNextToken();
-                statSequence();
+                statSequence(cfg.getFirstBlock());
                 if (token == Token.END_BRACE) {
                     moveToNextToken();
                     if (token == Token.PERIOD) {
@@ -63,7 +63,7 @@ public class Parser {
             throwFormatException("main expected in computation");
     }
 
-    private Result designator() throws IOException, SyntaxFormatException {
+    private Result designator(BasicBlock curBlock) throws IOException, SyntaxFormatException {
         Result x = new Result();
         List<Result> dimensions = new ArrayList<Result>();
         if (token == Token.IDENTIFIER) {
@@ -71,7 +71,7 @@ public class Parser {
             moveToNextToken();
             while (token == Token.BEGIN_BRACKET) {
                 moveToNextToken();
-                dimensions.add(expression());
+                dimensions.add(expression(curBlock));
                 if (token == Token.END_BRACKET)
                     moveToNextToken();
                 else
@@ -91,45 +91,45 @@ public class Parser {
                 || token == Token.CALL;
     }
 
-    private Result factor() throws IOException, SyntaxFormatException {
+    private Result factor(BasicBlock curBlock) throws IOException, SyntaxFormatException {
         Result x = new Result();
         if (token == Token.IDENTIFIER) {
-            x = designator();
+            x = designator(curBlock);
         } else if (token == Token.NUMBER) {
             x.set(Result.Type.constant, scanner.val);
             moveToNextToken();
         } else if (token == Token.BEGIN_PARENTHESIS) {
             moveToNextToken();
-            x = expression();
+            x = expression(curBlock);
             if (token == Token.END_PARENTHESIS)
                 moveToNextToken();
             else
                 throwFormatException("( expected after )");
         } else if (token == Token.CALL) {
-            funcCall();
+            funcCall(curBlock);
         } else
             throwFormatException("not a valid factor!");
 
         return x;
     }
 
-    private Result term() throws IOException, SyntaxFormatException {
-        Result x = factor();
+    private Result term(BasicBlock curBlock) throws IOException, SyntaxFormatException {
+        Result x = factor(curBlock);
         while (token == Token.TIMES || token == Token.DIVIDE) {
             Token op = token;
             moveToNextToken();
-            icGen.computeArithmeticOp(op, x, factor());
+            icGen.computeArithmeticOp(curBlock, op, x, factor(curBlock));
         }
 
         return x;
     }
 
-    private Result expression() throws IOException, SyntaxFormatException {
-        Result x = term();
+    private Result expression(BasicBlock curBlock) throws IOException, SyntaxFormatException {
+        Result x = term(curBlock);
         while (token == Token.PLUS || token == Token.MINUS) {
             Token op = token;
             moveToNextToken();
-            icGen.computeArithmeticOp(op, x, term()); // x = x +/- y
+            icGen.computeArithmeticOp(curBlock, op, x, term(curBlock)); // x = x +/- y
         }
 
         return x;
@@ -140,14 +140,14 @@ public class Parser {
                 || token == Token.GRE || token == Token.GEQ;
     }
 
-    private Result relation() throws IOException, SyntaxFormatException {
+    private Result relation(BasicBlock curBlock) throws IOException, SyntaxFormatException {
         Result condition = null;
-        Result left = expression();
+        Result left = expression(curBlock);
         if (isRelOp()) {
             Token op = token;
             moveToNextToken();
-            Result right = expression();
-            icGen.computeCmpOp(Instruction.cmp, left, right);
+            Result right = expression(curBlock);
+            icGen.computeCmpOp(curBlock, Instruction.cmp, left, right);
             condition = new Result();
             condition.kind = Result.Type.condition;
             condition.cc = op;
@@ -158,14 +158,14 @@ public class Parser {
         return condition;
     }
 
-    private void assignment() throws Throwable {
+    private void assignment(BasicBlock curBlock) throws Throwable {
         if (token == Token.LET) {
             moveToNextToken();
-            Result variable = designator();
+            Result variable = designator(curBlock);
             if (token == Token.BECOMETO) {
                 moveToNextToken();
-                Result assignedValue = expression();
-                icGen.assign(variable, assignedValue);
+                Result assignedValue = expression(curBlock);
+                icGen.assign(curBlock, variable, assignedValue);
             } else {
                 throwFormatException("<- expected in assignment");
             }
@@ -173,7 +173,7 @@ public class Parser {
             throwFormatException("let expected in assignment");
     }
 
-    private void funcCall() throws IOException, SyntaxFormatException {
+    private void funcCall(BasicBlock curBlock) throws IOException, SyntaxFormatException {
         Result x = new Result();
         if (token == Token.CALL) {
             moveToNextToken();
@@ -183,10 +183,10 @@ public class Parser {
                 if (token == Token.BEGIN_PARENTHESIS) {
                     moveToNextToken();
                     if (isExpression()) { // expression -> term -> factor -> designator -> identifier
-                        expression();
+                        expression(curBlock);
                         while (token == Token.COMMA) {
                             moveToNextToken();
-                            expression();
+                            expression(curBlock);
                         }
                     }
                     if (token == Token.END_PARENTHESIS) {
@@ -199,46 +199,70 @@ public class Parser {
         }
     }
 
-    private void ifStatement() throws Throwable {
+    
+    private void linkJoinBlock(BasicBlock curBlock, BasicBlock ifLastBlock, BasicBlock elseLastBlock, BasicBlock joinBlock){
+        ifLastBlock.setJoinSuccessor(joinBlock);
+        
+        if(elseLastBlock != null){
+            elseLastBlock.setJoinSuccessor(joinBlock);
+        } else {
+            curBlock.setElseSuccessor(joinBlock);
+        }
+    }
+    
+    private BasicBlock ifStatement(BasicBlock curBlock) throws Throwable {
         if (token == Token.IF) {
             moveToNextToken();
             Result follow = new Result();
             follow.fixuplocation = 0;
-            Result x = relation();
-            icGen.condNegBraFwd(x);
+            Result x = relation(curBlock);
+            
+            BasicBlock joinBlock = new BasicBlock();
+            curBlock.setJoinSuccessor(joinBlock);
+            
+            icGen.condNegBraFwd(curBlock, x);
+            
+            BasicBlock ifLastBlock = null;
+            BasicBlock elseLastBlock = null;
+            
             if (token == Token.THEN) {
                 moveToNextToken();
-                statSequence();
+                ifLastBlock = statSequence(curBlock.makeIfSuccessor());
                 if (token == Token.ELSE) {
                     moveToNextToken();
-                    icGen.unCondBraFwd(follow);
-                    icGen.fixup(x.fixuplocation);
-                    statSequence();
+                    icGen.unCondBraFwd(elseLastBlock, follow);
+                    BasicBlock elseBlock = curBlock.makeElseSuccessor();
+                    icGen.fixup(x.fixuplocation, elseBlock);
+                    elseLastBlock = statSequence(elseBlock);
                 } else {
-                    icGen.fixup(x.fixuplocation);
+                    icGen.fixup(x.fixuplocation, joinBlock);
                 }
                 if (token == Token.FI) {
                     moveToNextToken();
-                    icGen.fixAll(follow.fixuplocation);
+                    icGen.fixAll(follow.fixuplocation, joinBlock);
+                    linkJoinBlock(curBlock, ifLastBlock, elseLastBlock, joinBlock);
+                    
+                    return joinBlock;
                 } else
                     throwFormatException("fi expected in ifStatement");
             } else
                 throwFormatException("then expected in ifStatement");
         } else
             throwFormatException("if expected in ifStatement");
+        throw new Exception("Programmer error in ifStatement!");
     }
 
-    private void whileStatement() throws Throwable {
+    private void whileStatement(BasicBlock curBlock) throws Throwable {
         if (token == Token.WHILE) {
             moveToNextToken();
             int loopLocation = Instruction.getPC();
-            Result x = relation();
-            icGen.condNegBraFwd(x);
+            Result x = relation(curBlock);
+            icGen.condNegBraFwd(curBlock, x);
             if (token == Token.DO) {
                 moveToNextToken();
-                statSequence();
-                icGen.block.generateIntermediateCode(Instruction.bra, null, Result.makeBranch(loopLocation));
-                icGen.fixup(x.fixuplocation);
+                statSequence(curBlock);
+                curBlock.generateIntermediateCode(Instruction.bra, null, Result.makeBranch(loopLocation));
+//                icGen.fixup(x.fixuplocation);
                 if (token == Token.OD) {
                     moveToNextToken();
                 } else
@@ -249,11 +273,11 @@ public class Parser {
             throwFormatException("while expected in whileStatement");
     }
 
-    private void returnStatement() throws IOException, SyntaxFormatException {
+    private void returnStatement(BasicBlock curBlock) throws IOException, SyntaxFormatException {
         if (token == Token.RETURN) {
             moveToNextToken();
             if (isExpression()) { // expression -> term -> factor -> designator -> identifier
-                expression();
+                expression(curBlock);
             }
         } else
             throwFormatException("return expected in returnStatement");
@@ -264,27 +288,33 @@ public class Parser {
                 || token == Token.RETURN;
     }
 
-    private void statement() throws Throwable {
+    private BasicBlock statement(BasicBlock curBlock) throws Throwable {
         if (token == Token.LET) { // assignment
-            assignment();
+            assignment(curBlock);
+            return curBlock;
         } else if (token == Token.CALL) { // funcCall
-            funcCall();
+//            funcCall(curBlock);
+            return null;
         } else if (token == Token.IF) { // ifStatement
-            ifStatement();
+            return ifStatement(curBlock);
         } else if (token == Token.WHILE) { // whileStatement
-            whileStatement();
+//            return whileStatement(curBlock);
+            return null;
         } else if (token == Token.RETURN) { // returnStatement
-            returnStatement();
+            returnStatement(curBlock);
+            return curBlock;
         } else
             throwFormatException("not a valid statement");
+        throw new Exception("Programmer error in statement!");
     }
 
-    private void statSequence() throws Throwable {
-        statement();
+    private BasicBlock statSequence(BasicBlock curBlock) throws Throwable {
+        BasicBlock lastBlock = statement(curBlock);
         while (token == Token.SEMICOMA) {
             moveToNextToken();
-            statement();
+            lastBlock = statement(curBlock);
         }
+        return lastBlock;
     }
 
     private void typeDecl() throws IOException, SyntaxFormatException {
@@ -314,14 +344,14 @@ public class Parser {
             throwFormatException("not a valid typeDecl");
     }
 
-    private void varDecl(Function function) throws Throwable {
+    private void varDecl(BasicBlock curBlock, Function function) throws Throwable {
         Result x = null;
         typeDecl();
         if (token == Token.IDENTIFIER) {
             x = new Result();
             x.set(Result.Type.var, scanner.id); // x is varName in varDecl
             /** declare variable **/
-            icGen.declareVariable(x, function);
+            icGen.declareVariable(curBlock, x, function);
             moveToNextToken();
             while (token == Token.COMMA) {
                 moveToNextToken();
@@ -329,7 +359,7 @@ public class Parser {
                     x = new Result();
                     x.set(Result.Type.var, scanner.id); // x is varName in varDecl
                     /** declare variable **/
-                    icGen.declareVariable(x, function);
+                    icGen.declareVariable(curBlock, x, function);
                     moveToNextToken();
                 }
                 else
@@ -377,7 +407,7 @@ public class Parser {
             if (token == Token.IDENTIFIER) { // x is paramName in formalParam
                 x.set(Result.Type.var, scanner.id);
                 /** declare variable **/
-                icGen.declareVariable(x, function);
+//                icGen.declareVariable(x, function);
                 moveToNextToken();
                 while (token == Token.COMMA) {
                     moveToNextToken();
@@ -399,12 +429,12 @@ public class Parser {
 
     private void funcBody(Function function) throws Throwable {
         while (token == Token.VAR || token == Token.ARRAY) {
-            varDecl(function);
+            varDecl(function.getFuncBlock(), function);
         }
         if (token == Token.BEGIN_BRACE) {
             moveToNextToken();
             if (isStatement()) { // statSequence -> statement
-                statSequence();
+//                statSequence();
             }
             if (token == Token.END_BRACE) {
                 moveToNextToken();
@@ -422,6 +452,5 @@ public class Parser {
     public static void main(String[] args) throws Throwable {
         Parser ps = new Parser("src/test/resources/testprogs/self/if.txt");
         ps.parse();
-        ps.icGen.printIntermediateCode();
     }
 }
