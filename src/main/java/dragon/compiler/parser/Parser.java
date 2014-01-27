@@ -454,5 +454,7 @@ public class Parser {
         Parser ps = new Parser("src/test/resources/testprogs/self/if.txt");
         ps.parse();
         ps.cfg.printIntermediateCode();
+        VCGPrinter printer = new VCGPrinter();
+        printer.printCFG();
     }
 }

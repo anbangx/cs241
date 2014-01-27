@@ -93,7 +93,7 @@ public class Instruction {
     
     public String toString(){
         StringBuilder sb = new StringBuilder("");
-        sb.append(selfPC + " ");
+        sb.append(selfPC + ": ");
         sb.append(verbose(this.operator) + " ");
         if(this.operator >= bra && this.operator <= bgt){
             sb.append(result2.toString());
