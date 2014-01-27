@@ -10,10 +10,13 @@ public class BasicBlock {
     private int id;
     private List<Instruction> instructions;
     
-    private BasicBlock ifSuccessor;
+    private BasicBlock directSuccessor; // used in if and while
     private BasicBlock elseSuccessor;
-    //used in if-else statement for traversing CFG
+    // used in if-else statement for traversing CFG
     private BasicBlock joinSuccessor;
+    
+    // used in while statement
+    private BasicBlock backSuccessor;
     
     public BasicBlock() {
         id = ControlFlowGraph.blocks.size() + 1;
@@ -49,9 +52,9 @@ public class BasicBlock {
         return sb.toString();
     }
     
-    public BasicBlock makeIfSuccessor(){
+    public BasicBlock makeDirectSuccessor(){
         BasicBlock ifSuccessor = new BasicBlock();
-        this.ifSuccessor = ifSuccessor;
+        this.directSuccessor = ifSuccessor;
         return ifSuccessor;
     }
     
@@ -62,11 +65,11 @@ public class BasicBlock {
     }
     
     public BasicBlock getIfSuccessor() {
-        return ifSuccessor;
+        return directSuccessor;
     }
 
     public void setIfSuccessor(BasicBlock ifSuccessor) {
-        this.ifSuccessor = ifSuccessor;
+        this.directSuccessor = ifSuccessor;
     }
 
     public BasicBlock getElseSuccessor() {
@@ -83,6 +86,14 @@ public class BasicBlock {
 
     public void setJoinSuccessor(BasicBlock joinSuccessor) {
         this.joinSuccessor = joinSuccessor;
+    }
+    
+    public BasicBlock getBackSuccessor() {
+        return backSuccessor;
+    }
+
+    public void setBackSuccessor(BasicBlock backSuccessor) {
+        this.backSuccessor = backSuccessor;
     }
 
     public int getId() {

@@ -3,7 +3,6 @@ package dragon.compiler.parser;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.List;
 
 import dragon.compiler.data.BasicBlock;
 import dragon.compiler.data.Instruction;
@@ -13,9 +12,9 @@ public class VCGPrinter {
     
     private PrintWriter writer;
     
-    public VCGPrinter(){
+    public VCGPrinter(String outputName){
         try{
-            writer = new PrintWriter(new FileWriter("cfg.vcg"));
+            writer = new PrintWriter(new FileWriter("vcg/" + outputName + ".vcg"));
         } catch (IOException ex) {
             System.out.println(ex.getMessage());
         }
@@ -51,12 +50,9 @@ public class VCGPrinter {
             printEdge(block.getId(), block.getElseSuccessor().getId());
         }
         
-//        if(block.getBackSuccessor() != null) {
-//            writer.println("edge: { sourcename: \"" + block.getId() + "\"");
-//            writer.println("targetname: \"" + block.getBackSuccessor().getId() + "\"");
-//            writer.println("color: blue");
-//            writer.println("}");
-//        }
+        if(block.getBackSuccessor() != null) {
+            printEdge(block.getId(), block.getBackSuccessor().getId());
+        }
         
         if(block.getJoinSuccessor() != null && block.getIfSuccessor() == null) {
             printEdge(block.getId(), block.getJoinSuccessor().getId());

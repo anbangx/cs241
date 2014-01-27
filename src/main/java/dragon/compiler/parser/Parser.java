@@ -228,7 +228,7 @@ public class Parser {
             
             if (token == Token.THEN) {
                 moveToNextToken();
-                ifLastBlock = statSequence(curBlock.makeIfSuccessor());
+                ifLastBlock = statSequence(curBlock.makeDirectSuccessor());
                 if (token == Token.ELSE) {
                     moveToNextToken();
                     icGen.unCondBraFwd(ifLastBlock, follow);
@@ -253,25 +253,39 @@ public class Parser {
         throw new Exception("Programmer error in ifStatement!");
     }
 
-    private void whileStatement(BasicBlock curBlock) throws Throwable {
+    private BasicBlock whileStatement(BasicBlock curBlock) throws Throwable {
         if (token == Token.WHILE) {
             moveToNextToken();
-            int loopLocation = Instruction.getPC();
+            
+            BasicBlock innerJoinBlock = curBlock.makeDirectSuccessor();
+            curBlock = innerJoinBlock;
+            
             Result x = relation(curBlock);
             icGen.condNegBraFwd(curBlock, x);
+            
+            BasicBlock doLastBlock = null;
             if (token == Token.DO) {
                 moveToNextToken();
-                statSequence(curBlock);
-//                curBlock.generateIntermediateCode(Instruction.bra, null, Result.makeBranch(loopLocation));
-//                icGen.fixup(x.fixuplocation);
+                doLastBlock = statSequence(curBlock.makeDirectSuccessor());
+                doLastBlock.generateIntermediateCode(Instruction.bra, null, Result.makeBranch(curBlock));
+                
+                BasicBlock followBlock = curBlock.makeElseSuccessor();
+                icGen.fixup(x.fixuplocation, followBlock);
+                
+                //link loop block back to condition
+                doLastBlock.setBackSuccessor(curBlock);
+//                curBlock.setDirectPredecessor(doLastBlock);
+                
                 if (token == Token.OD) {
                     moveToNextToken();
+                    return followBlock;
                 } else
                     throwFormatException("od expected in whileStatement");
             } else
                 throwFormatException("do expected in whileStatement");
         } else
             throwFormatException("while expected in whileStatement");
+        throw new Exception("Programmer error!");
     }
 
     private void returnStatement(BasicBlock curBlock) throws IOException, SyntaxFormatException {
@@ -299,8 +313,7 @@ public class Parser {
         } else if (token == Token.IF) { // ifStatement
             return ifStatement(curBlock);
         } else if (token == Token.WHILE) { // whileStatement
-//            return whileStatement(curBlock);
-            return null;
+            return whileStatement(curBlock);
         } else if (token == Token.RETURN) { // returnStatement
             returnStatement(curBlock);
             return curBlock;
@@ -451,10 +464,11 @@ public class Parser {
     }
 
     public static void main(String[] args) throws Throwable {
-        Parser ps = new Parser("src/test/resources/testprogs/self/if.txt");
+        String testprog = "while";
+        Parser ps = new Parser("src/test/resources/testprogs/self/" + testprog + ".txt");
         ps.parse();
         ps.cfg.printIntermediateCode();
-        VCGPrinter printer = new VCGPrinter();
+        VCGPrinter printer = new VCGPrinter(testprog);
         printer.printCFG();
     }
 }

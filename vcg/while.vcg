@@ -1,0 +1,50 @@
+graph: { title: "Control Flow Graph"
+layoutalgorithm: dfs
+manhattan_edges: yes
+smanhattan_edges: yes
+node: {
+title: "1"
+label: "1[
+1: move 0 x_1
+2: move 1 x_2
+]"
+}
+edge: { sourcename: "1"
+targetname: "2"
+color: blue
+}
+node: {
+title: "2"
+label: "2[
+3: cmp x_3 5
+4: bge [4]
+]"
+}
+edge: { sourcename: "2"
+targetname: "3"
+color: blue
+}
+edge: { sourcename: "2"
+targetname: "4"
+color: blue
+}
+node: {
+title: "3"
+label: "3[
+5: add x_5 1
+6: move x_5 x_5
+7: bra [2]
+]"
+}
+edge: { sourcename: "3"
+targetname: "2"
+color: blue
+}
+node: {
+title: "4"
+label: "4[
+8: move 7 x_8
+9: end 
+]"
+}
+}
