@@ -92,6 +92,8 @@ public class IntermediateCodeGenerator {
             throw new Exception("The type of x should be var!");
         int varIndent = x.address;
         x.setSSA(Instruction.getPC());
+        VariableManager.addSSA(x.address, x.ssa);
+        
         if (function != null) {
             // add ident to local variable of the function
             function.getLocalVariables().add(varIndent);
@@ -121,6 +123,7 @@ public class IntermediateCodeGenerator {
         if (variable.kind == Result.Type.constant) {
             throw new Exception("left Result cannot be constant");
         }
+        variable.setSSA(Instruction.getPC()); VariableManager.addSSA(variable.address, variable.ssa);
         curBlock.generateIntermediateCode(Instruction.move, assignedValue, variable);
         //look up the constant table, if exists the same constant, use previous ssa
         //        if(y.kind == Result.Type.constant) {

@@ -68,7 +68,7 @@ public class Parser {
         Result x = new Result();
         List<Result> dimensions = new ArrayList<Result>();
         if (token == Token.IDENTIFIER) {
-            x.set(Result.Type.var, scanner.id); x.setSSA(Instruction.getPC());
+            x.set(Result.Type.var, scanner.id); 
             moveToNextToken();
             while (token == Token.BEGIN_BRACKET) {
                 moveToNextToken();
@@ -96,6 +96,7 @@ public class Parser {
         Result x = new Result();
         if (token == Token.IDENTIFIER) {
             x = designator(curBlock);
+            x.ssa = VariableManager.getLastVersionSSA(x.address);
         } else if (token == Token.NUMBER) {
             x.set(Result.Type.constant, scanner.val);
             moveToNextToken();
@@ -464,7 +465,7 @@ public class Parser {
     }
 
     public static void main(String[] args) throws Throwable {
-        String testprog = "while";
+        String testprog = "if";
         Parser ps = new Parser("src/test/resources/testprogs/self/" + testprog + ".txt");
         ps.parse();
         ps.cfg.printIntermediateCode();
