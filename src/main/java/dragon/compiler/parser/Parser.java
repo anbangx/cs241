@@ -48,7 +48,7 @@ public class Parser {
             }
             if (token == Token.BEGIN_BRACE) {
                 moveToNextToken();
-                BasicBlock lastBlock = statSequence(cfg.getFirstBlock());
+                BasicBlock lastBlock = statSequence(cfg.getFirstBlock(), null);
                 if (token == Token.END_BRACE) {
                     moveToNextToken();
                     if (token == Token.PERIOD) {
@@ -68,7 +68,8 @@ public class Parser {
         Result x = new Result();
         List<Result> dimensions = new ArrayList<Result>();
         if (token == Token.IDENTIFIER) {
-            x.set(Result.Type.var, scanner.id); 
+        	/** use def-use chain to find last version of x **/
+            x.set(Result.Type.var, scanner.id); // set variable version to instructionId 
             moveToNextToken();
             while (token == Token.BEGIN_BRACKET) {
                 moveToNextToken();
@@ -160,10 +161,14 @@ public class Parser {
         return condition;
     }
 
-    private void assignment(BasicBlock curBlock) throws Throwable {
+    private void assignment(BasicBlock curBlock, BasicBlock joinBlock) throws Throwable {
         if (token == Token.LET) {
             moveToNextToken();
             Result variable = designator(curBlock);
+            // create phi func in joinBlock if it exists
+            if(joinBlock != null){
+            	joinBlock.createPhiFunction(variable.address);
+            }
             if (token == Token.BECOMETO) {
                 moveToNextToken();
                 Result assignedValue = expression(curBlock);
@@ -229,13 +234,13 @@ public class Parser {
             
             if (token == Token.THEN) {
                 moveToNextToken();
-                ifLastBlock = statSequence(curBlock.makeDirectSuccessor());
+                ifLastBlock = statSequence(curBlock.makeDirectSuccessor(), joinBlock);
                 if (token == Token.ELSE) {
                     moveToNextToken();
                     icGen.unCondBraFwd(ifLastBlock, follow);
                     BasicBlock elseBlock = curBlock.makeElseSuccessor();
                     icGen.fixup(x.fixuplocation, elseBlock); // set target of NegBraFwd
-                    elseLastBlock = statSequence(elseBlock);
+                    elseLastBlock = statSequence(elseBlock, joinBlock);
                 } else {
                     icGen.fixup(x.fixuplocation, joinBlock);
                 }
@@ -267,7 +272,7 @@ public class Parser {
             BasicBlock doLastBlock = null;
             if (token == Token.DO) {
                 moveToNextToken();
-                doLastBlock = statSequence(curBlock.makeDirectSuccessor());
+                doLastBlock = statSequence(curBlock.makeDirectSuccessor(), innerJoinBlock);
                 doLastBlock.generateIntermediateCode(Instruction.bra, null, Result.makeBranch(curBlock));
                 
                 BasicBlock followBlock = curBlock.makeElseSuccessor();
@@ -304,9 +309,9 @@ public class Parser {
                 || token == Token.RETURN;
     }
 
-    private BasicBlock statement(BasicBlock curBlock) throws Throwable {
+    private BasicBlock statement(BasicBlock curBlock, BasicBlock joinBlock) throws Throwable {
         if (token == Token.LET) { // assignment
-            assignment(curBlock);
+            assignment(curBlock, joinBlock);
             return curBlock;
         } else if (token == Token.CALL) { // funcCall
 //            funcCall(curBlock);
@@ -323,11 +328,11 @@ public class Parser {
         throw new Exception("Programmer error in statement!");
     }
 
-    private BasicBlock statSequence(BasicBlock curBlock) throws Throwable {
-        BasicBlock lastBlock = statement(curBlock);
+    private BasicBlock statSequence(BasicBlock curBlock, BasicBlock joinBlock) throws Throwable {
+        BasicBlock lastBlock = statement(curBlock, joinBlock);
         while (token == Token.SEMICOMA) {
             moveToNextToken();
-            lastBlock = statement(lastBlock);
+            lastBlock = statement(lastBlock, joinBlock);
         }
         return lastBlock;
     }

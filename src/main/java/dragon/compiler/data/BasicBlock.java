@@ -4,12 +4,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 import dragon.compiler.parser.ControlFlowGraph;
+import dragon.compiler.parser.VariableManager;
 
 public class BasicBlock {
     
     private int id;
     private List<Instruction> instructions;
-    private PhiFuncManager phiFuncManager = null;
+    private PhiFuncManager phiFuncManager;
     
     private BasicBlock directSuccessor; // used in if and while
     private BasicBlock elseSuccessor;
@@ -23,8 +24,13 @@ public class BasicBlock {
         id = ControlFlowGraph.blocks.size() + 1;
         ControlFlowGraph.blocks.add(this);
         instructions = new ArrayList<Instruction>();
+        phiFuncManager = new PhiFuncManager();
     }
-
+    
+    public void createPhiFunction(int ident){
+    	phiFuncManager.createPhiInstruction(ident, VariableManager.getLastVersionSSA(ident));
+    }
+    
     public void generateIntermediateCode(int op, Result result1, Result result2) {
         instructions.add(new Instruction(op, result1, result2));
     }

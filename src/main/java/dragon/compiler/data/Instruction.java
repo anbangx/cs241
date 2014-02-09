@@ -82,11 +82,21 @@ public class Instruction {
     private int operator; 
     private Result result1;
     private Result result2;
+    private SSA ssa1;
+    private SSA ssa2;
     
     public Instruction(int op, Result result1, Result result2){
         this.operator = op;
         this.result1 = result1;
         this.result2 = result2;
+        this.selfPC = pc;
+        Instruction.pc++;
+    }
+    
+    public Instruction(int op, SSA ssa1, SSA ssa2){
+        this.operator = op;
+        this.ssa1 = ssa1;
+        this.ssa2 = ssa2;
         this.selfPC = pc;
         Instruction.pc++;
     }
