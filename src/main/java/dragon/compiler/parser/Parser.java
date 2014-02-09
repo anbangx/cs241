@@ -19,12 +19,10 @@ public class Parser {
     private Token token;
 
     private IntermediateCodeGenerator icGen;
-    private ControlFlowGraph cfg;
 
     public Parser(String path) throws IOException {
         this.scanner = new Scanner(path);
         this.icGen = new IntermediateCodeGenerator();
-        this.cfg = new ControlFlowGraph();
     }
 
     public void moveToNextToken() throws IOException {
@@ -42,14 +40,14 @@ public class Parser {
         if (token == Token.MAIN) {
             moveToNextToken();
             while (token == Token.VAR || token == Token.ARRAY) {
-                varDecl(cfg.getFirstBlock(), null); // pass null as function because it is main
+                varDecl(ControlFlowGraph.getFirstBlock(), null); // pass null as function because it is main
             }
             while (token == Token.FUNCTION || token == Token.PROCEDURE) {
                 funcDecl();
             }
             if (token == Token.BEGIN_BRACE) {
                 moveToNextToken();
-                BasicBlock lastBlock = statSequence(cfg.getFirstBlock(), null);
+                BasicBlock lastBlock = statSequence(ControlFlowGraph.getFirstBlock(), null);
                 if (token == Token.END_BRACE) {
                     moveToNextToken();
                     if (token == Token.PERIOD) {
@@ -478,10 +476,10 @@ public class Parser {
     }
 
     public static void main(String[] args) throws Throwable {
-        String testprog = "test014";
+        String testprog = "if";
         Parser ps = new Parser("src/test/resources/testprogs/self/" + testprog + ".txt");
         ps.parse();
-        ps.cfg.printIntermediateCode();
+        ControlFlowGraph.printIntermediateCode();
         VCGPrinter printer = new VCGPrinter(testprog);
         printer.printCFG();
     }

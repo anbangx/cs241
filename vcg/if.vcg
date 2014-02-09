@@ -25,7 +25,7 @@ color: blue
 node: {
 title: "2"
 label: "2[
-8: phi 10 13
+8: phi a_8 a_10 a_13
 14: move a_13 c_14
 15: end 
 ]"

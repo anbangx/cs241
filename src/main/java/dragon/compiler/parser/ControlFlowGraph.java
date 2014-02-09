@@ -38,20 +38,12 @@ public class ControlFlowGraph {
 				PhiFuncManager.Update_Type.RIGHT);
 	}
 
-	public BasicBlock getFirstBlock() {
+	public static BasicBlock getFirstBlock() {
 		return firstBlock;
-	}
-
-	public void setFirstBlock(BasicBlock firstBlock) {
-		this.firstBlock = firstBlock;
 	}
 
 	public ArrayList<BasicBlock> getBlocks() {
 		return blocks;
-	}
-
-	public void setBlocks(ArrayList<BasicBlock> blocks) {
-		this.blocks = blocks;
 	}
 
 	public static Instruction findInstruction(int index) {
@@ -62,7 +54,7 @@ public class ControlFlowGraph {
 		return null;
 	}
 
-	public void printIntermediateCode() {
+	public static void printIntermediateCode() {
 		for (BasicBlock block : blocks) {
 			System.out.println("Block_" + block.getId() + "[");
 			for (Map.Entry<Integer, Instruction> entry : block
