@@ -40,6 +40,13 @@ public class BasicBlock {
     			PhiFuncManager.Update_Type.LEFT : PhiFuncManager.Update_Type.RIGHT);
     }
     
+    public SSA findLastVersionSSAFromJoinblock(int ident) throws SyntaxFormatException{
+    	if(kind != Type.JOIN)
+    		throw new SyntaxFormatException("findLastVersionSSAFromJoinblock is called only in the join block!");
+    	Instruction instr = phiFuncManager.getPhiFuncs().get(ident);
+    	return instr.getSsa2();
+    }
+    
     public void generateIntermediateCode(int op, Result result1, Result result2) {
         instructions.add(new Instruction(op, result1, result2));
     }

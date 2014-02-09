@@ -14,13 +14,13 @@ public class PhiFuncManager {
 		phiFuncs = new HashMap<Integer, Instruction>();
 	}
 	
-	public Instruction createPhiInstruction(int ident, SSA oldSSA){
+	public Instruction createPhiInstruction(int ident, SSA lastSSA){
 		Instruction instr = null;
 		if(phiFuncs.containsKey(ident)){
 			instr = phiFuncs.get(ident);
 		} else{
 			// create a new instruction
-			instr = new Instruction(Instruction.phi, oldSSA, oldSSA);
+			instr = new Instruction(Instruction.phi, lastSSA, lastSSA);
 			phiFuncs.put(ident, instr);
 		}
 		return instr;

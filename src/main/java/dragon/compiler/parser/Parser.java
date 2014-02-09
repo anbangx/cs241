@@ -64,7 +64,7 @@ public class Parser {
             throwFormatException("main expected in computation");
     }
 
-    private Result designator(BasicBlock curBlock) throws IOException, SyntaxFormatException {
+    private Result designator(BasicBlock curBlock, BasicBlock joinBlock) throws IOException, SyntaxFormatException {
         Result x = new Result();
         List<Result> dimensions = new ArrayList<Result>();
         if (token == Token.IDENTIFIER) {
@@ -73,7 +73,7 @@ public class Parser {
             moveToNextToken();
             while (token == Token.BEGIN_BRACKET) {
                 moveToNextToken();
-                dimensions.add(expression(curBlock));
+                dimensions.add(expression(curBlock, joinBlock));
                 if (token == Token.END_BRACKET)
                     moveToNextToken();
                 else
@@ -93,46 +93,49 @@ public class Parser {
                 || token == Token.CALL;
     }
 
-    private Result factor(BasicBlock curBlock) throws IOException, SyntaxFormatException {
+    private Result factor(BasicBlock curBlock, BasicBlock joinBlock) throws IOException, SyntaxFormatException {
         Result x = new Result();
         if (token == Token.IDENTIFIER) {
-            x = designator(curBlock);
-            x.ssa = VariableManager.getLastVersionSSA(x.address);
+            x = designator(curBlock, joinBlock);
+            if(joinBlock != null){
+            	x.ssa = joinBlock.findLastVersionSSAFromJoinblock(x.address);
+            } else
+            	x.ssa = VariableManager.getLastVersionSSA(x.address);
         } else if (token == Token.NUMBER) {
             x.set(Result.Type.constant, scanner.val);
             moveToNextToken();
         } else if (token == Token.BEGIN_PARENTHESIS) {
             moveToNextToken();
-            x = expression(curBlock);
+            x = expression(curBlock, joinBlock);
             if (token == Token.END_PARENTHESIS)
                 moveToNextToken();
             else
                 throwFormatException("( expected after )");
         } else if (token == Token.CALL) {
-            funcCall(curBlock);
+            funcCall(curBlock, joinBlock);
         } else
             throwFormatException("not a valid factor!");
 
         return x;
     }
 
-    private Result term(BasicBlock curBlock) throws IOException, SyntaxFormatException {
-        Result x = factor(curBlock);
+    private Result term(BasicBlock curBlock, BasicBlock joinBlock) throws IOException, SyntaxFormatException {
+        Result x = factor(curBlock, joinBlock);
         while (token == Token.TIMES || token == Token.DIVIDE) {
             Token op = token;
             moveToNextToken();
-            icGen.computeArithmeticOp(curBlock, op, x, factor(curBlock));
+            icGen.computeArithmeticOp(curBlock, op, x, factor(curBlock, joinBlock));
         }
 
         return x;
     }
 
-    private Result expression(BasicBlock curBlock) throws IOException, SyntaxFormatException {
-        Result x = term(curBlock);
+    private Result expression(BasicBlock curBlock, BasicBlock joinBlock) throws IOException, SyntaxFormatException {
+        Result x = term(curBlock, joinBlock);
         while (token == Token.PLUS || token == Token.MINUS) {
             Token op = token;
             moveToNextToken();
-            icGen.computeArithmeticOp(curBlock, op, x, term(curBlock)); // x = x +/- y
+            icGen.computeArithmeticOp(curBlock, op, x, term(curBlock, joinBlock)); // x = x +/- y
         }
 
         return x;
@@ -143,13 +146,13 @@ public class Parser {
                 || token == Token.GRE || token == Token.GEQ;
     }
 
-    private Result relation(BasicBlock curBlock) throws IOException, SyntaxFormatException {
+    private Result relation(BasicBlock curBlock, BasicBlock joinBlock) throws IOException, SyntaxFormatException {
         Result condition = null;
-        Result left = expression(curBlock);
+        Result left = expression(curBlock, joinBlock);
         if (isRelOp()) {
             Token op = token;
             moveToNextToken();
-            Result right = expression(curBlock);
+            Result right = expression(curBlock, joinBlock);
             icGen.computeCmpOp(curBlock, Instruction.cmp, left, right);
             condition = new Result();
             condition.kind = Result.Type.condition;
@@ -164,14 +167,14 @@ public class Parser {
     private void assignment(BasicBlock curBlock, BasicBlock joinBlock) throws Throwable {
         if (token == Token.LET) {
             moveToNextToken();
-            Result variable = designator(curBlock);
+            Result variable = designator(curBlock, joinBlock);
             // create phi func in joinBlock if it exists
             if(joinBlock != null){
             	joinBlock.createPhiFunction(variable.address);
             }
             if (token == Token.BECOMETO) {
                 moveToNextToken();
-                Result assignedValue = expression(curBlock);
+                Result assignedValue = expression(curBlock, joinBlock);
                 icGen.assign(curBlock, joinBlock, variable, assignedValue);
             } else {
                 throwFormatException("<- expected in assignment");
@@ -180,7 +183,7 @@ public class Parser {
             throwFormatException("let expected in assignment");
     }
 
-    private void funcCall(BasicBlock curBlock) throws IOException, SyntaxFormatException {
+    private void funcCall(BasicBlock curBlock, BasicBlock joinBlock) throws IOException, SyntaxFormatException {
         Result x = new Result();
         if (token == Token.CALL) {
             moveToNextToken();
@@ -190,10 +193,10 @@ public class Parser {
                 if (token == Token.BEGIN_PARENTHESIS) {
                     moveToNextToken();
                     if (isExpression()) { // expression -> term -> factor -> designator -> identifier
-                        expression(curBlock);
+                        expression(curBlock, joinBlock);
                         while (token == Token.COMMA) {
                             moveToNextToken();
-                            expression(curBlock);
+                            expression(curBlock, joinBlock);
                         }
                     }
                     if (token == Token.END_PARENTHESIS) {
@@ -222,7 +225,7 @@ public class Parser {
             moveToNextToken();
             Result follow = new Result();
             follow.fixuplocation = 0;
-            Result x = relation(curBlock);
+            Result x = relation(curBlock, null);
             
             BasicBlock joinBlock = new BasicBlock(BasicBlock.Type.JOIN);
             curBlock.setJoinSuccessor(joinBlock);
@@ -266,7 +269,7 @@ public class Parser {
             BasicBlock innerJoinBlock = curBlock.makeDirectSuccessor();
             curBlock = innerJoinBlock;
             
-            Result x = relation(curBlock);
+            Result x = relation(curBlock, null);
             icGen.condNegBraFwd(curBlock, x);
             
             BasicBlock doLastBlock = null;
@@ -294,11 +297,11 @@ public class Parser {
         throw new Exception("Programmer error!");
     }
 
-    private void returnStatement(BasicBlock curBlock) throws IOException, SyntaxFormatException {
+    private void returnStatement(BasicBlock curBlock, BasicBlock joinBlock) throws IOException, SyntaxFormatException {
         if (token == Token.RETURN) {
             moveToNextToken();
             if (isExpression()) { // expression -> term -> factor -> designator -> identifier
-                expression(curBlock);
+                expression(curBlock, joinBlock);
             }
         } else
             throwFormatException("return expected in returnStatement");
@@ -321,7 +324,7 @@ public class Parser {
         } else if (token == Token.WHILE) { // whileStatement
             return whileStatement(curBlock);
         } else if (token == Token.RETURN) { // returnStatement
-            returnStatement(curBlock);
+            returnStatement(curBlock, joinBlock);
             return curBlock;
         } else
             throwFormatException("not a valid statement");
