@@ -3,6 +3,7 @@ package dragon.compiler.parser;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import dragon.compiler.data.BasicBlock;
 import dragon.compiler.data.Function;
@@ -98,7 +99,8 @@ public class Parser {
         if (token == Token.IDENTIFIER) {
             x = designator(curBlock, joinBlock);
             if(joinBlock != null){
-            	x.ssa = joinBlock.findLastVersionSSAFromJoinblock(x.address);
+            	joinBlock.createPhiFunction(x.address, curBlock);
+            	x.ssa = joinBlock.findLastVersionSSAFromJoinblock(x.address); 
             } else
             	x.ssa = VariableManager.getLastVersionSSA(x.address);
         } else if (token == Token.NUMBER) {
@@ -170,7 +172,7 @@ public class Parser {
             Result variable = designator(curBlock, joinBlock);
             // create phi func in joinBlock if it exists
             if(joinBlock != null){
-            	joinBlock.createPhiFunction(variable.address);
+            	joinBlock.createPhiFunction(variable.address, curBlock);
             }
             if (token == Token.BECOMETO) {
                 moveToNextToken();
@@ -227,7 +229,7 @@ public class Parser {
             follow.fixuplocation = 0;
             Result x = relation(curBlock, null);
             
-            BasicBlock joinBlock = new BasicBlock(BasicBlock.Type.JOIN);
+            BasicBlock joinBlock = new BasicBlock(BasicBlock.Type.IF_JOIN);
             curBlock.setJoinSuccessor(joinBlock);
             
             icGen.condNegBraFwd(curBlock, x);
@@ -237,7 +239,7 @@ public class Parser {
             
             if (token == Token.THEN) {
                 moveToNextToken();
-                ifLastBlock = statSequence(curBlock.makeDirectSuccessor(), joinBlock);
+                ifLastBlock = statSequence(curBlock.makeIfSuccessor(), joinBlock);
                 if (token == Token.ELSE) {
                     moveToNextToken();
                     icGen.unCondBraFwd(ifLastBlock, follow);
@@ -266,7 +268,7 @@ public class Parser {
         if (token == Token.WHILE) {
             moveToNextToken();
             
-            BasicBlock innerJoinBlock = curBlock.makeDirectSuccessor();
+            BasicBlock innerJoinBlock = curBlock.makeInnerJoinSuccessor();
             curBlock = innerJoinBlock;
             
             Result x = relation(curBlock, null);
@@ -275,8 +277,11 @@ public class Parser {
             BasicBlock doLastBlock = null;
             if (token == Token.DO) {
                 moveToNextToken();
-                doLastBlock = statSequence(curBlock.makeDirectSuccessor(), innerJoinBlock);
+                doLastBlock = statSequence(curBlock.makeDoSuccessor(), innerJoinBlock);
                 doLastBlock.generateIntermediateCode(Instruction.bra, null, Result.makeBranch(curBlock));
+                
+                for(Map.Entry<Integer, Instruction> entry : innerJoinBlock.getPhiFuncs().entrySet())
+                	innerJoinBlock.updateVarReferenceToPhi(entry.getKey(), entry.getValue().getSelfPC(), doLastBlock);
                 
                 BasicBlock followBlock = curBlock.makeElseSuccessor();
                 icGen.fixup(x.fixuplocation, followBlock);
@@ -473,7 +478,7 @@ public class Parser {
     }
 
     public static void main(String[] args) throws Throwable {
-        String testprog = "if";
+        String testprog = "test014";
         Parser ps = new Parser("src/test/resources/testprogs/self/" + testprog + ".txt");
         ps.parse();
         ps.cfg.printIntermediateCode();

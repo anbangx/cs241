@@ -98,4 +98,8 @@ public class Result {
         }
         return sb.toString();
     }
+    
+    public boolean isIdent(int ident){
+    	return this.kind == Type.var && this.address == ident;  
+    }
 }

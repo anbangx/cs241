@@ -1,10 +1,13 @@
-package dragon.compiler.data;
+package dragon.compiler.parser;
 
 import java.util.HashMap;
 
+import dragon.compiler.data.Instruction;
+import dragon.compiler.data.SSA;
+
 public class PhiFuncManager {
 
-	enum Update_Type{
+	public enum Update_Type{
 		LEFT, RIGHT;
 	}
 	// <ident, instruction>

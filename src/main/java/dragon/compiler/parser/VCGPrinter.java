@@ -7,6 +7,7 @@ import java.util.Map;
 
 import dragon.compiler.data.BasicBlock;
 import dragon.compiler.data.Instruction;
+import dragon.compiler.scanner.Scanner;
 
 
 public class VCGPrinter {
@@ -37,8 +38,12 @@ public class VCGPrinter {
         writer.println("node: {");
         writer.println("title: \"" + block.getId() + "\"");
         writer.println("label: \"" + block.getId() + "[");
-        for(Map.Entry<Integer, Instruction> entry : block.getPhiFuncManager().getPhiFuncs().entrySet())
+        for(Map.Entry<Integer, Instruction> entry : block.getPhiFuncManager().getPhiFuncs().entrySet()){
+        	String var = Scanner.existIdents.get(entry.getKey());
+        	Instruction instr = entry.getValue();
+        	instr.setVar(var);
         	this.printInstruction(entry.getValue());
+        }
         for(Instruction inst : block.getInstructions()) {
             this.printInstruction(inst);
         }
