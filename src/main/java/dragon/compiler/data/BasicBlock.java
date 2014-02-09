@@ -9,6 +9,7 @@ public class BasicBlock {
     
     private int id;
     private List<Instruction> instructions;
+    private PhiFuncManager phiFuncManager = null;
     
     private BasicBlock directSuccessor; // used in if and while
     private BasicBlock elseSuccessor;
