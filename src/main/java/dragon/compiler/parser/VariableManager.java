@@ -24,6 +24,10 @@ public class VariableManager {
         return ssaList.get(ssaList.size() - 1);
     }
     
+    public static void addSSA(int id, int ssa){
+    	addSSA(id, new SSA(ssa));
+    }
+    
     public static void addSSA(int id, SSA ssa){
         ArrayList<SSA> ssaList = null;
         if(ssaMap.containsKey(id)){

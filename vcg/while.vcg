@@ -16,7 +16,8 @@ color: blue
 node: {
 title: "2"
 label: "2[
-3: cmp x_3 5
+5: phi x_5 x_2 x_7
+3: cmp x_5 5
 4: bge [4]
 ]"
 }
@@ -31,9 +32,9 @@ color: blue
 node: {
 title: "3"
 label: "3[
-5: add x_5 1
-6: move x_5 x_5
-7: bra [2]
+6: add x_5 1
+7: move x_5 x_7
+8: bra [2]
 ]"
 }
 edge: { sourcename: "3"
@@ -43,8 +44,8 @@ color: blue
 node: {
 title: "4"
 label: "4[
-8: move 7 x_8
-9: end 
+9: move 7 x_9
+10: end 
 ]"
 }
 }

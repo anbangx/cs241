@@ -99,7 +99,7 @@ public class Result {
         return sb.toString();
     }
     
-    public boolean isIdent(int ident){
-    	return this.kind == Type.var && this.address == ident;  
+    public boolean isIdent(int ident, int oldSSA){
+    	return this.kind == Type.var && this.address == ident && this.ssa.getVersion() == oldSSA;  
     }
 }

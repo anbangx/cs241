@@ -46,7 +46,7 @@ public class BasicBlock {
 				ControlFlowGraph.phiFuncUpdateType.get(blockType));
 	}
 
-	public void updateVarReferenceToPhi(int ident, int newSSA,
+	public void updateVarReferenceToPhi(int ident, int oldSSA, int newSSA,
 			BasicBlock curBlock) throws SyntaxFormatException {
 		if (kind != Type.WHILE_JOIN)
 			throw new SyntaxFormatException(
@@ -63,9 +63,9 @@ public class BasicBlock {
 			throw new SyntaxFormatException(
 					"updateVarReferenceToPhi can only be called in the LOOP BODY!");
 		for (Instruction i : curBlock.getInstructions()) {
-			if (i.getResult1() != null && i.getResult1().isIdent(ident))
+			if (i.getResult1() != null && i.getResult1().isIdent(ident, oldSSA))
 				i.getResult1().setSSA(newSSA);
-			if (i.getResult2() != null && i.getResult2().isIdent(ident))
+			if (i.getResult2() != null && i.getResult2().isIdent(ident, oldSSA))
 				i.getResult2().setSSA(newSSA);
 		}
 	}
