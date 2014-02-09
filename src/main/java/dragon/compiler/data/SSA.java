@@ -16,4 +16,7 @@ public class SSA {
         this.version = version;
     }
     
+    public String toString(){
+    	return Integer.toString(version);
+    }
 }

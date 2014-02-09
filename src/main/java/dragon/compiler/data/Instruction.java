@@ -1,6 +1,9 @@
 package dragon.compiler.data;
 
 public class Instruction {
+	enum Type{
+		PHI, NON_PHI;
+	}
     private static int pc = 1;
     private int selfPC;
     public static final int neg = 0;
@@ -80,6 +83,7 @@ public class Instruction {
     }
     
     private int operator; 
+    private Type kind;
     private Result result1;
     private Result result2;
     private SSA ssa1;
@@ -89,6 +93,7 @@ public class Instruction {
         this.operator = op;
         this.result1 = result1;
         this.result2 = result2;
+        this.kind = Type.NON_PHI;
         this.selfPC = pc;
         Instruction.pc++;
     }
@@ -97,6 +102,7 @@ public class Instruction {
         this.operator = op;
         this.ssa1 = ssa1;
         this.ssa2 = ssa2;
+        this.kind = Type.PHI;
         this.selfPC = pc;
         Instruction.pc++;
     }
@@ -105,11 +111,15 @@ public class Instruction {
         StringBuilder sb = new StringBuilder("");
         sb.append(selfPC + ": ");
         sb.append(verbose(this.operator) + " ");
-        if(this.operator >= bra && this.operator <= bgt){
-            sb.append(result2.toString());
+        if(kind == Type.NON_PHI){
+	        if(this.operator >= bra && this.operator <= bgt){
+	            sb.append(result2.toString());
+	        } else{
+	            sb.append(result1 != null ? result1.toString() + " " : "");
+	            sb.append(result2 != null ? result2.toString() : "");
+	        }
         } else{
-            sb.append(result1 != null ? result1.toString() + " " : "");
-            sb.append(result2 != null ? result2.toString() : "");
+        	sb.append(ssa1.toString() + " " + ssa2.toString());
         }
         return sb.toString();
     }
@@ -137,5 +147,21 @@ public class Instruction {
     public void setResult2(Result result2) {
         this.result2 = result2;
     }
+
+	public SSA getSsa1() {
+		return ssa1;
+	}
+
+	public void setSsa1(SSA ssa1) {
+		this.ssa1 = ssa1;
+	}
+
+	public SSA getSsa2() {
+		return ssa2;
+	}
+
+	public void setSsa2(SSA ssa2) {
+		this.ssa2 = ssa2;
+	}
     
 }

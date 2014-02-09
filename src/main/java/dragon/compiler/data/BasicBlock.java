@@ -7,8 +7,11 @@ import dragon.compiler.parser.ControlFlowGraph;
 import dragon.compiler.parser.VariableManager;
 
 public class BasicBlock {
-    
+	public enum Type{
+		IF, ELSE, JOIN, NONE;
+	}
     private int id;
+    private Type kind;
     private List<Instruction> instructions;
     private PhiFuncManager phiFuncManager;
     
@@ -20,8 +23,9 @@ public class BasicBlock {
     // used in while statement
     private BasicBlock backSuccessor;
     
-    public BasicBlock() {
-        id = ControlFlowGraph.blocks.size() + 1;
+    public BasicBlock(Type kind) {
+        this.id = ControlFlowGraph.blocks.size() + 1;
+        this.kind = kind;
         ControlFlowGraph.blocks.add(this);
         instructions = new ArrayList<Instruction>();
         phiFuncManager = new PhiFuncManager();
@@ -31,11 +35,24 @@ public class BasicBlock {
     	phiFuncManager.createPhiInstruction(ident, VariableManager.getLastVersionSSA(ident));
     }
     
+    public void updatePhiFunction(int ident, SSA newSSA, Type blockType){
+    	phiFuncManager.updatePhiInstruction(ident, newSSA, blockType == Type.IF ? 
+    			PhiFuncManager.Update_Type.LEFT : PhiFuncManager.Update_Type.RIGHT);
+    }
+    
     public void generateIntermediateCode(int op, Result result1, Result result2) {
         instructions.add(new Instruction(op, result1, result2));
     }
     
-    public List<Instruction> getInstructions() {
+    public PhiFuncManager getPhiFuncManager() {
+		return phiFuncManager;
+	}
+
+	public void setPhiFuncManager(PhiFuncManager phiFuncManager) {
+		this.phiFuncManager = phiFuncManager;
+	}
+
+	public List<Instruction> getInstructions() {
         return instructions;
     }
 
@@ -43,7 +60,15 @@ public class BasicBlock {
         this.instructions = instructions;
     }
     
-    public Instruction findInstruction(int index){
+    public Type getKind() {
+		return kind;
+	}
+
+	public void setKind(Type kind) {
+		this.kind = kind;
+	}
+
+	public Instruction findInstruction(int index){
         for(Instruction i : instructions){
             if(i.getSelfPC() == index)
                 return i;
@@ -60,13 +85,13 @@ public class BasicBlock {
     }
     
     public BasicBlock makeDirectSuccessor(){
-        BasicBlock ifSuccessor = new BasicBlock();
+        BasicBlock ifSuccessor = new BasicBlock(Type.IF);
         this.directSuccessor = ifSuccessor;
         return ifSuccessor;
     }
     
     public BasicBlock makeElseSuccessor(){
-        BasicBlock elseSuccessor = new BasicBlock();
+        BasicBlock elseSuccessor = new BasicBlock(Type.ELSE);
         this.elseSuccessor = elseSuccessor;
         return elseSuccessor;
     }

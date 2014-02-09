@@ -4,6 +4,9 @@ import java.util.HashMap;
 
 public class PhiFuncManager {
 
+	enum Update_Type{
+		LEFT, RIGHT;
+	}
 	// <ident, instruction>
 	private HashMap<Integer, Instruction> phiFuncs;
 
@@ -12,13 +15,31 @@ public class PhiFuncManager {
 	}
 	
 	public Instruction createPhiInstruction(int ident, SSA oldSSA){
-		Instruction ans = null;
+		Instruction instr = null;
 		if(phiFuncs.containsKey(ident)){
-			ans = phiFuncs.get(ident);
+			instr = phiFuncs.get(ident);
 		} else{
 			// create a new instruction
-			ans = new Instruction(Instruction.phi, oldSSA, oldSSA);
+			instr = new Instruction(Instruction.phi, oldSSA, oldSSA);
+			phiFuncs.put(ident, instr);
 		}
-		return ans;
+		return instr;
 	}
+	
+	public void updatePhiInstruction(int ident, SSA newSSA, Update_Type updateType){
+		Instruction instr = phiFuncs.get(ident);
+		if(updateType == Update_Type.LEFT)
+			instr.setSsa1(newSSA);
+		else
+			instr.setSsa2(newSSA);
+	}
+
+	public HashMap<Integer, Instruction> getPhiFuncs() {
+		return phiFuncs;
+	}
+
+	public void setPhiFuncs(HashMap<Integer, Instruction> phiFuncs) {
+		this.phiFuncs = phiFuncs;
+	}
+	
 }

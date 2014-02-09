@@ -172,7 +172,7 @@ public class Parser {
             if (token == Token.BECOMETO) {
                 moveToNextToken();
                 Result assignedValue = expression(curBlock);
-                icGen.assign(curBlock, variable, assignedValue);
+                icGen.assign(curBlock, joinBlock, variable, assignedValue);
             } else {
                 throwFormatException("<- expected in assignment");
             }
@@ -224,7 +224,7 @@ public class Parser {
             follow.fixuplocation = 0;
             Result x = relation(curBlock);
             
-            BasicBlock joinBlock = new BasicBlock();
+            BasicBlock joinBlock = new BasicBlock(BasicBlock.Type.JOIN);
             curBlock.setJoinSuccessor(joinBlock);
             
             icGen.condNegBraFwd(curBlock, x);

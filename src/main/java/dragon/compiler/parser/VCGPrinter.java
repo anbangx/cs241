@@ -3,6 +3,7 @@ package dragon.compiler.parser;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.Map;
 
 import dragon.compiler.data.BasicBlock;
 import dragon.compiler.data.Instruction;
@@ -36,6 +37,8 @@ public class VCGPrinter {
         writer.println("node: {");
         writer.println("title: \"" + block.getId() + "\"");
         writer.println("label: \"" + block.getId() + "[");
+        for(Map.Entry<Integer, Instruction> entry : block.getPhiFuncManager().getPhiFuncs().entrySet())
+        	this.printInstruction(entry.getValue());
         for(Instruction inst : block.getInstructions()) {
             this.printInstruction(inst);
         }

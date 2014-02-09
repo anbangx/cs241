@@ -1,6 +1,8 @@
 package dragon.compiler.parser;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 import dragon.compiler.data.BasicBlock;
 import dragon.compiler.data.Instruction;
@@ -25,7 +27,7 @@ public class ControlFlowGraph {
     
     public ControlFlowGraph(){
         blocks = new ArrayList<BasicBlock>();
-        firstBlock = new BasicBlock();
+        firstBlock = new BasicBlock(BasicBlock.Type.NONE);
     }
     
     public BasicBlock getFirstBlock() {
@@ -56,6 +58,8 @@ public class ControlFlowGraph {
     public void printIntermediateCode() {
         for(BasicBlock block : blocks){
             System.out.println("Block_" + block.getId() + "[");
+            for(Map.Entry<Integer, Instruction> entry : block.getPhiFuncManager().getPhiFuncs().entrySet())
+                System.out.println(entry.toString());
             for(Instruction i : block.getInstructions())
                 System.out.println(i.toString());
             System.out.println("]");

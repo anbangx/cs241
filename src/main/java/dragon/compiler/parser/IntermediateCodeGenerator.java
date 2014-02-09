@@ -119,12 +119,17 @@ public class IntermediateCodeGenerator {
         }
     }
     
-    public void assign(BasicBlock curBlock, Result variable, Result assignedValue) throws Throwable {
+    public void assign(BasicBlock curBlock, BasicBlock joinBlock, Result variable, Result assignedValue) throws Throwable {
         if (variable.kind == Result.Type.constant) {
             throw new Exception("left Result cannot be constant");
         }
         variable.setSSA(Instruction.getPC()); VariableManager.addSSA(variable.address, variable.ssa);
         curBlock.generateIntermediateCode(Instruction.move, assignedValue, variable);
+        
+        // update phi function
+        if(joinBlock != null){
+        	joinBlock.updatePhiFunction(variable.address, variable.ssa, curBlock.getKind());
+        }
         //look up the constant table, if exists the same constant, use previous ssa
         //        if(y.kind == Result.Type.constant) {
         //            if(!VariableManager.constantExist(y.val)) {

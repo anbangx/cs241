@@ -11,7 +11,7 @@ public class Function {
     
     public Function(int funcIdent){
         this.funcIdent= funcIdent;
-        funcBlock = new BasicBlock();
+        funcBlock = new BasicBlock(BasicBlock.Type.NONE);
         localVariables = new ArrayList<Integer>();
         globalVariables = new ArrayList<Integer>();
     }
