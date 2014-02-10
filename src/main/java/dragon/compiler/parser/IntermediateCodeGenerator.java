@@ -11,18 +11,24 @@ import dragon.compiler.data.Token;
 import dragon.compiler.register.RegisterAllocator;
 
 public class IntermediateCodeGenerator {
-
+	
+	public final int InputNum = 0;
+	public final int OutputNum = 1;
+	public final int OutputNewLine = 2;
+	
     private RegisterAllocator registerAllocator;
     private HashSet<Integer> existedFunctions;
     private HashMap<Token, Integer> arithmeticOpCode;
     private HashMap<Token, Integer> negatedBranchOpCode;
+    private HashMap<Integer, Integer> basicIoOpCode;
 
     public IntermediateCodeGenerator() {
         this.registerAllocator = new RegisterAllocator();
         this.existedFunctions = new HashSet<Integer>();
         this.arithmeticOpCode = new HashMap<Token, Integer>();
         this.negatedBranchOpCode = new HashMap<Token, Integer>();
-
+        this.basicIoOpCode = new HashMap<Integer, Integer>();
+        
         arithmeticOpCode.put(Token.PLUS, Instruction.add);
         arithmeticOpCode.put(Token.MINUS, Instruction.sub);
         arithmeticOpCode.put(Token.TIMES, Instruction.mul);
@@ -34,6 +40,10 @@ public class IntermediateCodeGenerator {
         negatedBranchOpCode.put(Token.LEQ, Instruction.bgt);
         negatedBranchOpCode.put(Token.GRE, Instruction.ble);
         negatedBranchOpCode.put(Token.GEQ, Instruction.blt);
+        
+        basicIoOpCode.put(InputNum, Instruction.read);
+        basicIoOpCode.put(OutputNum, Instruction.write);
+        basicIoOpCode.put(OutputNewLine, Instruction.wln);
     }
 
     public void load(Result x) {
@@ -85,6 +95,10 @@ public class IntermediateCodeGenerator {
 
     public void computeCmpOp(BasicBlock curBlock, int opCode, Result left, Result right) {
         curBlock.generateIntermediateCode(opCode, left, right);
+    }
+    
+    public void generateBasicIoOp(BasicBlock curBlock, int ioOp, Result x){
+    	curBlock.generateIntermediateCode(basicIoOpCode.get(ioOp), x, null);
     }
 
     public void declareVariable(BasicBlock curBlock, Result x, Function function) throws Throwable {

@@ -78,6 +78,12 @@ public class Instruction {
 			return "bge";
 		case bgt:
 			return "bgt";
+		case read:
+			return "read";
+		case write:
+			return "write";
+		case wln:
+			return "wln";
 		default:
 			return "";
 		}

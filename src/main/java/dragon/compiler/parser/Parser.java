@@ -211,9 +211,10 @@ public class Parser {
 				moveToNextToken();
 				if (token == Token.BEGIN_PARENTHESIS) {
 					moveToNextToken();
+					Result y = new Result();
 					if (isExpression()) { // expression -> term -> factor ->
 											// designator -> identifier
-						expression(curBlock, joinBlock);
+						y = expression(curBlock, joinBlock);
 						while (token == Token.COMMA) {
 							moveToNextToken();
 							expression(curBlock, joinBlock);
@@ -223,6 +224,8 @@ public class Parser {
 						moveToNextToken();
 					} else
 						throwFormatException(") expected in funcCall");
+					if(x.address < 3)
+						icGen.generateBasicIoOp(curBlock, x.address, y);
 				}
 			} else
 				throwFormatException("identifier expected in funCall");
@@ -371,8 +374,8 @@ public class Parser {
 			assignment(curBlock, joinBlock);
 			return curBlock;
 		} else if (token == Token.CALL) { // funcCall
-		// funcCall(curBlock);
-			return null;
+			funcCall(curBlock, joinBlock);
+			return curBlock;
 		} else if (token == Token.IF) { // ifStatement
 			return ifStatement(curBlock);
 		} else if (token == Token.WHILE) { // whileStatement
@@ -531,8 +534,8 @@ public class Parser {
 	}
 
 	public static void main(String[] args) throws Throwable {
-		String testprog = "while";
-		Parser ps = new Parser("src/test/resources/testprogs/self/" + testprog
+		String testprog = "test005";
+		Parser ps = new Parser("src/test/resources/testprogs/simple/" + testprog
 				+ ".txt");
 		ps.parse();
 		ControlFlowGraph.printIntermediateCode();

@@ -8,7 +8,7 @@ import dragon.compiler.data.Token;
 import dragon.compiler.reader.Reader;
 
 public class Scanner {
-
+	
     private Reader reader;
     private Character curChar;
 
