@@ -1,0 +1,14 @@
+main
+var x, y;
+function boo( a, b );
+var i;
+{
+	let i <- 1;
+	let x <- i + 1;
+	return x + 4
+	
+};
+{
+	let y <- y + call boo( 2, 4 )
+}
+.

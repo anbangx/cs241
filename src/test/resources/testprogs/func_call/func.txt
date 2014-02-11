@@ -9,6 +9,6 @@ var a, b;
 	let y <- b
 };
 {
-	call foo( )
+	call foo
 }
 .

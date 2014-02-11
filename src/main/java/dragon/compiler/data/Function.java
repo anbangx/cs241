@@ -5,15 +5,20 @@ import java.util.ArrayList;
 public class Function {
     
     private int funcIdent;
-    private BasicBlock funcBlock;
+    private BasicBlock firstFuncBlock;
     private ArrayList<Integer> localVariables;
     private ArrayList<Integer> globalVariables;
+    private ArrayList<Result> parameters;
+    
+    private Result returnInstr;
     
     public Function(int funcIdent){
         this.funcIdent= funcIdent;
-        funcBlock = new BasicBlock(BasicBlock.Type.NONE);
+        firstFuncBlock = new BasicBlock(BasicBlock.Type.NONE);
         localVariables = new ArrayList<Integer>();
         globalVariables = new ArrayList<Integer>();
+        parameters = new ArrayList<Result>();
+        returnInstr = new Result();
     }
     
     public void addLocalVariable(int localVariable){
@@ -31,16 +36,16 @@ public class Function {
     public void setFuncIdent(int funcIdent) {
         this.funcIdent = funcIdent;
     }
-    
-    public BasicBlock getFuncBlock() {
-        return funcBlock;
-    }
 
-    public void setFuncBlock(BasicBlock funcBlock) {
-        this.funcBlock = funcBlock;
-    }
+    public BasicBlock getFirstFuncBlock() {
+		return firstFuncBlock;
+	}
 
-    public ArrayList<Integer> getLocalVariables() {
+	public void setFirstFuncBlock(BasicBlock firstFuncBlock) {
+		this.firstFuncBlock = firstFuncBlock;
+	}
+
+	public ArrayList<Integer> getLocalVariables() {
         return localVariables;
     }
 
@@ -55,5 +60,21 @@ public class Function {
     public void setGlobalVariables(ArrayList<Integer> globalVariables) {
         this.globalVariables = globalVariables;
     }
+
+	public ArrayList<Result> getParameters() {
+		return parameters;
+	}
+
+	public void setParameters(ArrayList<Result> parameters) {
+		this.parameters = parameters;
+	}
+
+	public Result getReturnInstr() {
+		return returnInstr;
+	}
+
+	public void setReturnInstr(Result returnInstr) {
+		this.returnInstr = returnInstr;
+	}
     
 }

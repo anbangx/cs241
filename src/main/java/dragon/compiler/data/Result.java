@@ -4,7 +4,7 @@ import dragon.compiler.scanner.Scanner;
 
 public class Result {
     public enum Type{
-        unknown, constant, var, reg, condition, branch
+        unknown, constant, var, reg, condition, branch, instr
     }
 //    public static final int unknown = 0;
 //    public static final int constant = 1;
@@ -20,6 +20,7 @@ public class Result {
     public int fixuplocation;
     public Token cc;
     public BasicBlock targetBlock; // the target block of the branch
+    public int instrId;
     
     public Result(){
     }
@@ -38,6 +39,9 @@ public class Result {
                 this.kind = Type.reg;
                 this.regno = input;
                 break;
+            case instr:
+            	this.kind = Type.instr;
+            	this.instrId = input;
             default:
                 break;
         }
@@ -93,6 +97,8 @@ public class Result {
             case branch:
                 sb.append(targetBlock != null ? "[" + targetBlock.getId() + "]": "-1");
                 break;
+            case instr:
+            	sb.append("(" + instrId + ")");
             default:
                 return "";
         }

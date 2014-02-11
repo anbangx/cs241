@@ -53,7 +53,7 @@ public class Parser {
 			if (token == Token.BEGIN_BRACE) {
 				moveToNextToken();
 				BasicBlock lastBlock = statSequence(
-						ControlFlowGraph.getFirstBlock(), null);
+						ControlFlowGraph.getFirstBlock(), null, null);
 				if (token == Token.END_BRACE) {
 					moveToNextToken();
 					if (token == Token.PERIOD) {
@@ -122,7 +122,7 @@ public class Parser {
 			else
 				throwFormatException("( expected after )");
 		} else if (token == Token.CALL) {
-			funcCall(curBlock, joinBlock);
+			x = funcCall(curBlock, joinBlock);
 		} else
 			throwFormatException("not a valid factor!");
 
@@ -200,40 +200,58 @@ public class Parser {
 			throwFormatException("let expected in assignment");
 	}
 
-	private void funcCall(BasicBlock curBlock, BasicBlock joinBlock)
+	private Result funcCall(BasicBlock curBlock, BasicBlock joinBlock)
 			throws IOException, SyntaxFormatException {
 		Result x = new Result();
+		Function func = null;
 		if (token == Token.CALL) {
 			moveToNextToken();
 			if (token == Token.IDENTIFIER) {
 				x.set(Result.Type.var, scanner.id); // x is a func ident in
 													// funcCall
+				// assign value to parameters
+				func = ControlFlowGraph.existedFunctions.get(x.address);
 				moveToNextToken();
+				
+				int index = 0;
 				if (token == Token.BEGIN_PARENTHESIS) {
 					moveToNextToken();
 					Result y = new Result();
 					if (isExpression()) { // expression -> term -> factor ->
 											// designator -> identifier
 						y = expression(curBlock, joinBlock);
+						icGen.generateAssignParameterOp(curBlock, y, func.getParameters().get(index++));
+						
 						while (token == Token.COMMA) {
 							moveToNextToken();
-							expression(curBlock, joinBlock);
+							y = expression(curBlock, joinBlock);
+							icGen.generateAssignParameterOp(curBlock, y, func.getParameters().get(index++));
 						}
 					}
 					if (token == Token.END_PARENTHESIS) {
 						moveToNextToken();
 					} else
 						throwFormatException(") expected in funcCall");
+					// make bra to func call
 					if(x.address < 3)
 						icGen.generateBasicIoOp(curBlock, x.address, y);
 					else{
-						Result branch = Result.makeBranch(ControlFlowGraph.existedFunctions.get(x.address));
+						Result branch = Result.makeBranch(ControlFlowGraph.existedFunctions.get(x.address).getFirstFuncBlock());
+						curBlock.generateIntermediateCode(Instruction.bra, null, branch);
+					}
+				} else{
+					// make bra to func call
+					if(x.address < 3)
+						icGen.generateBasicIoOp(curBlock, x.address, null);
+					else{
+						Result branch = Result.makeBranch(ControlFlowGraph.existedFunctions.get(x.address).getFirstFuncBlock());
 						curBlock.generateIntermediateCode(Instruction.bra, null, branch);
 					}
 				}
 			} else
 				throwFormatException("identifier expected in funCall");
 		}
+		return func.getReturnInstr();
 	}
 
 	private void linkJoinBlock(BasicBlock curBlock, BasicBlock ifLastBlock,
@@ -247,7 +265,7 @@ public class Parser {
 		}
 	}
 
-	private BasicBlock ifStatement(BasicBlock curBlock) throws Throwable {
+	private BasicBlock ifStatement(BasicBlock curBlock, Function function) throws Throwable {
 		if (token == Token.IF) {
 			moveToNextToken();
 			Result follow = new Result();
@@ -265,14 +283,14 @@ public class Parser {
 			if (token == Token.THEN) {
 				moveToNextToken();
 				ifLastBlock = statSequence(curBlock.makeIfSuccessor(),
-						joinBlock);
+						joinBlock, function);
 				if (token == Token.ELSE) {
 					moveToNextToken();
 					icGen.unCondBraFwd(ifLastBlock, follow);
 					BasicBlock elseBlock = curBlock.makeElseSuccessor();
 					icGen.fixup(x.fixuplocation, elseBlock); // set target of
 																// NegBraFwd
-					elseLastBlock = statSequence(elseBlock, joinBlock);
+					elseLastBlock = statSequence(elseBlock, joinBlock, function);
 				} else {
 					icGen.fixup(x.fixuplocation, joinBlock);
 				}
@@ -307,7 +325,7 @@ public class Parser {
 		}
 	}
 
-	private BasicBlock whileStatement(BasicBlock curBlock) throws Throwable {
+	private BasicBlock whileStatement(BasicBlock curBlock, Function function) throws Throwable {
 		if (token == Token.WHILE) {
 			moveToNextToken();
 
@@ -321,7 +339,7 @@ public class Parser {
 			if (token == Token.DO) {
 				moveToNextToken();
 				doLastBlock = statSequence(curBlock.makeDoSuccessor(),
-						innerJoinBlock);
+						innerJoinBlock, function);
 				doLastBlock.generateIntermediateCode(Instruction.bra, null,
 						Result.makeBranch(curBlock));
 
@@ -355,16 +373,18 @@ public class Parser {
 					.getSelfPC(), doLastBlock);
 	}
 
-	private void returnStatement(BasicBlock curBlock, BasicBlock joinBlock)
+	private Result returnStatement(BasicBlock curBlock, BasicBlock joinBlock)
 			throws IOException, SyntaxFormatException {
+		Result x = new Result();
 		if (token == Token.RETURN) {
 			moveToNextToken();
 			if (isExpression()) { // expression -> term -> factor -> designator
 									// -> identifier
-				expression(curBlock, joinBlock);
+				x = expression(curBlock, joinBlock);
 			}
 		} else
 			throwFormatException("return expected in returnStatement");
+		return x;
 	}
 
 	private boolean isStatement() {
@@ -372,7 +392,7 @@ public class Parser {
 				|| token == Token.WHILE || token == Token.RETURN;
 	}
 
-	private BasicBlock statement(BasicBlock curBlock, BasicBlock joinBlock)
+	private BasicBlock statement(BasicBlock curBlock, BasicBlock joinBlock, Function function)
 			throws Throwable {
 		if (token == Token.LET) { // assignment
 			assignment(curBlock, joinBlock);
@@ -381,23 +401,24 @@ public class Parser {
 			funcCall(curBlock, joinBlock);
 			return curBlock;
 		} else if (token == Token.IF) { // ifStatement
-			return ifStatement(curBlock);
+			return ifStatement(curBlock, function);
 		} else if (token == Token.WHILE) { // whileStatement
-			return whileStatement(curBlock);
+			return whileStatement(curBlock, function);
 		} else if (token == Token.RETURN) { // returnStatement
-			returnStatement(curBlock, joinBlock);
+			Result x = returnStatement(curBlock, joinBlock);
+			icGen.generateReturnOp(curBlock, x, function);
 			return curBlock;
 		} else
 			throwFormatException("not a valid statement");
 		throw new Exception("Programmer error in statement!");
 	}
 
-	private BasicBlock statSequence(BasicBlock curBlock, BasicBlock joinBlock)
+	private BasicBlock statSequence(BasicBlock curBlock, BasicBlock joinBlock, Function function)
 			throws Throwable {
-		BasicBlock lastBlock = statement(curBlock, joinBlock);
+		BasicBlock lastBlock = statement(curBlock, joinBlock, function);
 		while (token == Token.SEMICOMA) {
 			moveToNextToken();
-			lastBlock = statement(lastBlock, joinBlock);
+			lastBlock = statement(lastBlock, joinBlock, function);
 		}
 		return lastBlock;
 	}
@@ -493,14 +514,18 @@ public class Parser {
 			if (token == Token.IDENTIFIER) { // x is paramName in formalParam
 				x.set(Result.Type.var, scanner.id);
 				/** declare variable **/
-				icGen.declareVariable(function.getFuncBlock(), x, function);
+				icGen.declareVariable(function.getFirstFuncBlock(), x, function);
+				/** add to function parameters **/
+				function.getParameters().add(x);
 				moveToNextToken();
 				while (token == Token.COMMA) {
 					moveToNextToken();
 					if (token == Token.IDENTIFIER) { // multiple paramNames
 						x.set(Result.Type.var, scanner.id);
 						/** declare variable **/
-						icGen.declareVariable(function.getFuncBlock(), x, function);
+						icGen.declareVariable(function.getFirstFuncBlock(), x, function);
+						/** add to function parameters **/
+						function.getParameters().add(x);
 						moveToNextToken();
 					} else
 						throwFormatException("identifier expeced after , in formalParam");
@@ -518,12 +543,12 @@ public class Parser {
 
 	private void funcBody(Function function) throws Throwable {
 		while (token == Token.VAR || token == Token.ARRAY) {
-			varDecl(function.getFuncBlock(), function);
+			varDecl(function.getFirstFuncBlock(), function);
 		}
 		if (token == Token.BEGIN_BRACE) {
 			moveToNextToken();
 			if (isStatement()) { // statSequence -> statement
-				statSequence(function.getFuncBlock(), null);
+				statSequence(function.getFirstFuncBlock(), null, function);
 			}
 			if (token == Token.END_BRACE) {
 				moveToNextToken();
@@ -541,8 +566,8 @@ public class Parser {
 	}
 
 	public static void main(String[] args) throws Throwable {
-		String testprog = "test028";
-		Parser ps = new Parser("src/test/resources/testprogs/" + testprog
+		String testprog = "para2";
+		Parser ps = new Parser("src/test/resources/testprogs/func_call/" + testprog
 				+ ".txt");
 		ps.parse();
 		ControlFlowGraph.printIntermediateCode();

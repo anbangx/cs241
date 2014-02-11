@@ -128,7 +128,7 @@ public class IntermediateCodeGenerator {
 		int funcIdent = x.address;
 		if (!ControlFlowGraph.existedFunctions.containsKey(funcIdent)) {
 			Function func = new Function(funcIdent);
-			ControlFlowGraph.existedFunctions.put(funcIdent, func.getFuncBlock());
+			ControlFlowGraph.existedFunctions.put(funcIdent, func);
 			return func;
 		} else {
 			System.out.println("Function name duplicates!");
@@ -164,6 +164,18 @@ public class IntermediateCodeGenerator {
 		// } else {
 		// VariableManager.addAssignment(Instruction.getPC(), x);
 		// }
+	}
+	
+	public void generateReturnOp(BasicBlock curBlock, Result x, Function function){
+		Result curInstr = new Result();
+		curInstr.set(Result.Type.instr, Instruction.getPC());
+		curBlock.generateIntermediateCode(Instruction.move, x, curInstr);
+		// connect function with return Instruction#
+		function.setReturnInstr(curInstr);
+	}
+	
+	public void generateAssignParameterOp(BasicBlock curBlock, Result value, Result parameter){
+		curBlock.generateIntermediateCode(Instruction.move, value, parameter);
 	}
 
 	public void condNegBraFwd(BasicBlock curBlock, Result x) {

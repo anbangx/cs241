@@ -1,0 +1,12 @@
+main
+var x, y;
+procedure bar( a );
+var b;
+{
+	let b <- 1;
+	let x <- a + b
+};
+{
+	call bar( 1 );
+	let y <- x
+}.
