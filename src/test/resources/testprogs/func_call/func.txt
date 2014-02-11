@@ -1,0 +1,14 @@
+main
+var x, y;
+procedure foo( );
+var a, b;
+{
+	let a <- 1;
+	let b <- 2;
+	let x <- a;
+	let y <- b
+};
+{
+	call foo( )
+}
+.

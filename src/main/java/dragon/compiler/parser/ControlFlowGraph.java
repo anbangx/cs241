@@ -2,6 +2,7 @@ package dragon.compiler.parser;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 
 import dragon.compiler.data.BasicBlock;
@@ -26,6 +27,8 @@ public class ControlFlowGraph {
 	public static ArrayList<BasicBlock> blocks;
 	public static HashMap<BasicBlock.Type, PhiFuncManager.Update_Type> phiFuncUpdateType;
 
+	public static HashMap<Integer, BasicBlock> existedFunctions;
+
 	public ControlFlowGraph() {
 		blocks = new ArrayList<BasicBlock>();
 		firstBlock = new BasicBlock(BasicBlock.Type.NONE);
@@ -36,6 +39,8 @@ public class ControlFlowGraph {
 				PhiFuncManager.Update_Type.RIGHT);
 		phiFuncUpdateType.put(BasicBlock.Type.DO,
 				PhiFuncManager.Update_Type.RIGHT);
+
+		existedFunctions = new HashMap<Integer, BasicBlock>();
 	}
 
 	public static BasicBlock getFirstBlock() {

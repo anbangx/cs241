@@ -226,6 +226,10 @@ public class Parser {
 						throwFormatException(") expected in funcCall");
 					if(x.address < 3)
 						icGen.generateBasicIoOp(curBlock, x.address, y);
+					else{
+						Result branch = Result.makeBranch(ControlFlowGraph.existedFunctions.get(x.address));
+						curBlock.generateIntermediateCode(Instruction.bra, null, branch);
+					}
 				}
 			} else
 				throwFormatException("identifier expected in funCall");
@@ -489,11 +493,14 @@ public class Parser {
 			if (token == Token.IDENTIFIER) { // x is paramName in formalParam
 				x.set(Result.Type.var, scanner.id);
 				/** declare variable **/
-				// icGen.declareVariable(x, function);
+				icGen.declareVariable(function.getFuncBlock(), x, function);
 				moveToNextToken();
 				while (token == Token.COMMA) {
 					moveToNextToken();
 					if (token == Token.IDENTIFIER) { // multiple paramNames
+						x.set(Result.Type.var, scanner.id);
+						/** declare variable **/
+						icGen.declareVariable(function.getFuncBlock(), x, function);
 						moveToNextToken();
 					} else
 						throwFormatException("identifier expeced after , in formalParam");
@@ -516,7 +523,7 @@ public class Parser {
 		if (token == Token.BEGIN_BRACE) {
 			moveToNextToken();
 			if (isStatement()) { // statSequence -> statement
-			// statSequence();
+				statSequence(function.getFuncBlock(), null);
 			}
 			if (token == Token.END_BRACE) {
 				moveToNextToken();
@@ -534,8 +541,8 @@ public class Parser {
 	}
 
 	public static void main(String[] args) throws Throwable {
-		String testprog = "test005";
-		Parser ps = new Parser("src/test/resources/testprogs/simple/" + testprog
+		String testprog = "func";
+		Parser ps = new Parser("src/test/resources/testprogs/func_call/" + testprog
 				+ ".txt");
 		ps.parse();
 		ControlFlowGraph.printIntermediateCode();
