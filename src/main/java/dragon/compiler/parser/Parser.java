@@ -541,8 +541,8 @@ public class Parser {
 	}
 
 	public static void main(String[] args) throws Throwable {
-		String testprog = "func";
-		Parser ps = new Parser("src/test/resources/testprogs/func_call/" + testprog
+		String testprog = "test028";
+		Parser ps = new Parser("src/test/resources/testprogs/" + testprog
 				+ ".txt");
 		ps.parse();
 		ControlFlowGraph.printIntermediateCode();

@@ -53,11 +53,12 @@ public class BasicBlock {
 					"updateVarReferenceToPhi can only be called in the WHOLE_JOIN!");
 		// update cond statement
 		Instruction cond = findCondInstruction(ident);
-		if (cond.getResult1().address == ident)
-			cond.getResult1().setSSA(newSSA);
-		else
-			cond.getResult2().setSSA(newSSA);
-
+		if(cond != null){
+			if (cond.getResult1().address == ident)
+				cond.getResult1().setSSA(newSSA);
+			else
+				cond.getResult2().setSSA(newSSA);
+		}
 		// update loop body
 		if (curBlock.kind != Type.DO)
 			throw new SyntaxFormatException(
