@@ -21,8 +21,24 @@ public class Result {
     public Token cc;
     public BasicBlock targetBlock; // the target block of the branch
     public int instrId;
+    public boolean onlyMove = true;
     
     public Result(){
+    }
+    
+    public Result(Result result){
+    	if(result != null){
+	    	this.kind = result.kind;
+	    	this.value = result.value;
+	    	this.address = result.address;
+	    	this.ssa = result.ssa;
+	    	this.regno = result.regno;
+	    	this.fixuplocation = result.fixuplocation;
+	    	this.cc = result.cc;
+	    	this.targetBlock = result.targetBlock;
+	    	this.instrId = result.instrId;
+	    	this.onlyMove = result.onlyMove;
+    	}
     }
     
     public void set(Type type, int input){
@@ -99,6 +115,7 @@ public class Result {
                 break;
             case instr:
             	sb.append("(" + instrId + ")");
+            	break;
             default:
                 return "";
         }

@@ -1,11 +1,13 @@
 package dragon.compiler.data;
 
+import dragon.compiler.parser.ControlFlowGraph;
+
 public class Instruction {
 	enum Type {
 		PHI, NON_PHI;
 	}
 
-	private static int pc = 1;
+	private static int pc = 0;
 	private int selfPC;
 	public static final int neg = 0;
 	public static final int add = 1;
@@ -96,6 +98,7 @@ public class Instruction {
 	private SSA ssa1;
 	private SSA ssa2;
 	private String var;
+	private boolean leftLatestUpdated;
 
 	public Instruction(int op, Result result1, Result result2) {
 		this.operator = op;
@@ -104,6 +107,7 @@ public class Instruction {
 		this.kind = Type.NON_PHI;
 		this.selfPC = pc;
 		Instruction.pc++;
+		ControlFlowGraph.allInstructions.add(this);
 	}
 
 	public Instruction(int op, SSA ssa1, SSA ssa2) {
@@ -113,6 +117,7 @@ public class Instruction {
 		this.kind = Type.PHI;
 		this.selfPC = pc;
 		Instruction.pc++;
+		ControlFlowGraph.allInstructions.add(this);
 	}
 
 	public String getVar() {
@@ -197,4 +202,12 @@ public class Instruction {
 		this.operator = operator;
 	}
 
+	public boolean isLeftLatestUpdated() {
+		return leftLatestUpdated;
+	}
+
+	public void setLeftLatestUpdated(boolean leftLatestUpdated) {
+		this.leftLatestUpdated = leftLatestUpdated;
+	}
+	
 }

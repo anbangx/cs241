@@ -5,56 +5,52 @@ smanhattan_edges: yes
 node: {
 title: "1"
 label: "1[
-0: move 0 a_0
-1: move 0 b_1
-2: move 1 a_2
-3: move 2 b_3
-4: cmp a_2 b_3
-5: ble [4]
+0: move 0 x_0
+1: move 1 x_1
 ]"
 }
 edge: { sourcename: "1"
-targetname: "3"
-color: blue
-}
-edge: { sourcename: "1"
-targetname: "4"
+targetname: "2"
 color: blue
 }
 node: {
 title: "2"
 label: "2[
-6: phi a_6 a_8 a_2
-10: phi b_10 b_3 b_12
-13: cmp a_6 b_10
-14: bge [5]
+4: phi x_4 x_1 x_6
+2: cmp x_4 3
+3: bge [6]
 ]"
+}
+edge: { sourcename: "2"
+targetname: "3"
+color: blue
 }
 edge: { sourcename: "2"
 targetname: "6"
 color: blue
 }
-edge: { sourcename: "2"
-targetname: "5"
-color: blue
-}
 node: {
 title: "3"
 label: "3[
-7: add a_2 1
-8: move (7) a_8
-9: bra [2]
+5: add x_4 1
+6: move (5) x_6
+7: cmp x_6 2
+8: bge [4]
 ]"
 }
 edge: { sourcename: "3"
-targetname: "2"
+targetname: "5"
+color: blue
+}
+edge: { sourcename: "3"
+targetname: "4"
 color: blue
 }
 node: {
 title: "4"
 label: "4[
-11: add b_3 1
-12: move (11) b_12
+9: phi x_9 x_11 x_6
+12: bra [2]
 ]"
 }
 edge: { sourcename: "4"
@@ -64,21 +60,19 @@ color: blue
 node: {
 title: "5"
 label: "5[
-15: phi a_15 a_17 a_6
-18: write a_15 
-19: write b_10 
-20: end 
+10: add x_6 1
+11: move (10) x_11
 ]"
+}
+edge: { sourcename: "5"
+targetname: "4"
+color: blue
 }
 node: {
 title: "6"
 label: "6[
-16: sub a_6 1
-17: move (16) a_17
+13: write x_9 
+14: end 
 ]"
-}
-edge: { sourcename: "6"
-targetname: "5"
-color: blue
 }
 }

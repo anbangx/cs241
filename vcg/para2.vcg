@@ -1,0 +1,31 @@
+graph: { title: "Control Flow Graph"
+layoutalgorithm: dfs
+manhattan_edges: yes
+smanhattan_edges: yes
+node: {
+title: "1"
+label: "1[
+1: move 0 x_1
+2: move 0 y_2
+11: move 2 a_3
+12: move 4 b_4
+13: bra [2]
+14: add y_2 (10)
+15: move (14) y_15
+16: end 
+]"
+}
+node: {
+title: "2"
+label: "2[
+3: move 0 a_3
+4: move 0 b_4
+5: move 0 i_5
+6: move 1 i_6
+7: add i_6 1
+8: move (7) x_8
+9: add x_8 4
+10: move (9) (10)
+]"
+}
+}

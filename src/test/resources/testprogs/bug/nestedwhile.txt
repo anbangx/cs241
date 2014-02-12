@@ -1,0 +1,15 @@
+// Basic while statement test
+main
+var a, b;
+{
+	let a <- 1;
+	let b <- 2;
+	while a < 3 do
+		let a <- a + 1;
+		while b < 4 do
+			let b <- b + 1
+		od
+	od;
+	call OutputNum(a);
+	call OutputNum(b)
+}.

@@ -25,16 +25,25 @@ public class PhiFuncManager {
 			// create a new instruction
 			instr = new Instruction(Instruction.phi, lastSSA, lastSSA);
 			phiFuncs.put(ident, instr);
+			
+			ControlFlowGraph.updateXPreDefUseChains(lastSSA, instr);
+			ControlFlowGraph.updateYPreDefUseChains(lastSSA, instr);
 		}
 		return instr;
 	}
 	
 	public void updatePhiInstruction(int ident, SSA newSSA, Update_Type updateType){
 		Instruction instr = phiFuncs.get(ident);
-		if(updateType == Update_Type.LEFT)
+		if(updateType == Update_Type.LEFT){
+			instr.setLeftLatestUpdated(true);
 			instr.setSsa1(newSSA);
-		else
+			ControlFlowGraph.updateXPreDefUseChains(newSSA, instr);
+		}
+		else{
+			instr.setLeftLatestUpdated(false);
 			instr.setSsa2(newSSA);
+			ControlFlowGraph.updateYPreDefUseChains(newSSA, instr);
+		}
 	}
 
 	public HashMap<Integer, Instruction> getPhiFuncs() {

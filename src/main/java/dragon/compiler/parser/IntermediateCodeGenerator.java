@@ -151,19 +151,9 @@ public class IntermediateCodeGenerator {
 			joinBlock.updatePhiFunction(variable.address, variable.ssa,
 					curBlock.getKind());
 		}
-		// look up the constant table, if exists the same constant, use previous
-		// ssa
-		// if(y.kind == Result.Type.constant) {
-		// if(!VariableManager.constantExist(y.val)) {
-		// VariableManager.addAssignment(Instruction.getPC(), x);
-		// VariableManager.addConstant(y.val, x.ssa);
-		// } else {
-		// y.ssa = VariableManager.getSSAOfConstant(y.val);
-		// VariableManager.addAssignment(Instruction.getPC(), x);
-		// }
-		// } else {
-		// VariableManager.addAssignment(Instruction.getPC(), x);
-		// }
+		
+		// update def-use chain
+		
 	}
 	
 	public void generateReturnOp(BasicBlock curBlock, Result x, Function function){

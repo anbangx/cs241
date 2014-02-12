@@ -33,7 +33,7 @@ node: {
 title: "3"
 label: "3[
 6: add x_5 1
-7: move x_5 x_7
+7: move (6) x_7
 8: bra [2]
 ]"
 }

@@ -1,0 +1,8 @@
+// Basic while statement test
+main
+var a, b, c;
+{
+	let a <- 1;
+	let b <- a + 1;
+	let c <- a + b
+}.
