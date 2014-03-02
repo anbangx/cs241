@@ -3,6 +3,7 @@ package dragon.compiler.parser;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 
 import dragon.compiler.data.SSA;
 
@@ -20,7 +21,7 @@ public class VariableManager {
     }
     
     public static SSA getLastVersionSSA(int id){
-        ArrayList<SSA> ssaList = ssaMap.get(id);
+        ArrayList<SSA> ssaList = getSsaMap().get(id);
         return ssaList.get(ssaList.size() - 1);
     }
     
@@ -30,13 +31,29 @@ public class VariableManager {
     
     public static void addSSA(int id, SSA ssa){
         ArrayList<SSA> ssaList = null;
-        if(ssaMap.containsKey(id)){
-            ssaList = ssaMap.get(id);
+        if(getSsaMap().containsKey(id)){
+            ssaList = getSsaMap().get(id);
         } else{
             ssaList = new ArrayList<SSA>();
-            ssaMap.put(id, ssaList);
+            getSsaMap().put(id, ssaList);
         }
         ssaList.add(ssa);
+    }
+
+    public static HashMap<Integer, ArrayList<SSA>> getSsaMap() {
+        return ssaMap;
+    }
+    
+    public static HashMap<Integer, ArrayList<SSA>> deepCopySSAMap(){
+        HashMap<Integer, ArrayList<SSA>> newSSAMap = new HashMap<Integer, ArrayList<SSA>>();
+        for(Map.Entry<Integer, ArrayList<SSA>> entry : ssaMap.entrySet()){
+            newSSAMap.put(entry.getKey(), new ArrayList<SSA>(entry.getValue()));
+        }
+        return newSSAMap;
+    }
+
+    public static void setSsaMap(HashMap<Integer, ArrayList<SSA>> ssaMap) {
+        VariableManager.ssaMap = ssaMap;
     }
 
 }

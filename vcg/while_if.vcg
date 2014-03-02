@@ -16,7 +16,7 @@ color: blue
 node: {
 title: "2"
 label: "2[
-4: phi x_4 x_1 x_6
+4: phi x_4 x_1 x_9
 2: cmp x_4 3
 3: bge [6]
 ]"
@@ -71,7 +71,7 @@ color: blue
 node: {
 title: "6"
 label: "6[
-13: write x_9 
+13: write x_4 
 14: end 
 ]"
 }

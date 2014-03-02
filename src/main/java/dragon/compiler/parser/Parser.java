@@ -10,6 +10,7 @@ import dragon.compiler.data.BasicBlock;
 import dragon.compiler.data.Function;
 import dragon.compiler.data.Instruction;
 import dragon.compiler.data.Result;
+import dragon.compiler.data.SSA;
 import dragon.compiler.data.SyntaxFormatException;
 import dragon.compiler.data.Token;
 import dragon.compiler.scanner.Scanner;
@@ -69,7 +70,8 @@ public class Parser {
             throwFormatException("main expected in computation");
     }
 
-    private Result designator(BasicBlock curBlock, BasicBlock joinBlock) throws IOException, SyntaxFormatException {
+    private Result designator(BasicBlock curBlock, ArrayList<BasicBlock> joinBlocks) throws IOException,
+            SyntaxFormatException {
         Result x = new Result();
         List<Result> dimensions = new ArrayList<Result>();
         if (token == Token.IDENTIFIER) {
@@ -79,7 +81,7 @@ public class Parser {
             moveToNextToken();
             while (token == Token.BEGIN_BRACKET) {
                 moveToNextToken();
-                dimensions.add(expression(curBlock, joinBlock));
+                dimensions.add(expression(curBlock, joinBlocks));
                 if (token == Token.END_BRACKET)
                     moveToNextToken();
                 else
@@ -99,10 +101,11 @@ public class Parser {
                 || token == Token.CALL;
     }
 
-    private Result factor(BasicBlock curBlock, BasicBlock joinBlock) throws IOException, SyntaxFormatException {
+    private Result factor(BasicBlock curBlock, ArrayList<BasicBlock> joinBlocks) throws IOException,
+            SyntaxFormatException {
         Result x = new Result();
         if (token == Token.IDENTIFIER) {
-            x = designator(curBlock, joinBlock);
+            x = designator(curBlock, joinBlocks);
             //			if (joinBlock != null) {
             //				joinBlock.createPhiFunction(x.address, curBlock);
             //				x.ssa = joinBlock.findLastVersionSSAFromJoinblock(x.address);
@@ -113,30 +116,31 @@ public class Parser {
             moveToNextToken();
         } else if (token == Token.BEGIN_PARENTHESIS) {
             moveToNextToken();
-            x = expression(curBlock, joinBlock);
+            x = expression(curBlock, joinBlocks);
             if (token == Token.END_PARENTHESIS)
                 moveToNextToken();
             else
                 throwFormatException("( expected after )");
         } else if (token == Token.CALL) {
-            x = funcCall(curBlock, joinBlock);
+            x = funcCall(curBlock, joinBlocks);
         } else
             throwFormatException("not a valid factor!");
 
         return x;
     }
 
-    private Result term(BasicBlock curBlock, BasicBlock joinBlock) throws IOException, SyntaxFormatException {
-        Result x = factor(curBlock, joinBlock);
+    private Result term(BasicBlock curBlock, ArrayList<BasicBlock> joinBlocks) throws IOException,
+            SyntaxFormatException {
+        Result x = factor(curBlock, joinBlocks);
         while (token == Token.TIMES || token == Token.DIVIDE) {
             Token op = token;
             moveToNextToken();
 
-            Result y = factor(curBlock, joinBlock);
+            Result y = factor(curBlock, joinBlocks);
             x.onlyMove = false;
             x.instrId = Instruction.getPC();
             icGen.computeArithmeticOp(curBlock, op, x, y);
-            
+
             // update def use chain
             ControlFlowGraph.updateDefUseChain(x, y);
         }
@@ -144,17 +148,18 @@ public class Parser {
         return x;
     }
 
-    private Result expression(BasicBlock curBlock, BasicBlock joinBlock) throws IOException, SyntaxFormatException {
-        Result x = term(curBlock, joinBlock);
+    private Result expression(BasicBlock curBlock, ArrayList<BasicBlock> joinBlocks) throws IOException,
+            SyntaxFormatException {
+        Result x = term(curBlock, joinBlocks);
         while (token == Token.PLUS || token == Token.MINUS) {
             Token op = token;
             moveToNextToken();
 
-            Result y = term(curBlock, joinBlock);
+            Result y = term(curBlock, joinBlocks);
             x.onlyMove = false;
             x.instrId = Instruction.getPC();
             icGen.computeArithmeticOp(curBlock, op, x, y); // x = x +/- y
-            
+
             // update def use chain
             ControlFlowGraph.updateDefUseChain(x, y);
         }
@@ -168,13 +173,14 @@ public class Parser {
                 || token == Token.GRE || token == Token.GEQ;
     }
 
-    private Result relation(BasicBlock curBlock, BasicBlock joinBlock) throws IOException, SyntaxFormatException {
+    private Result relation(BasicBlock curBlock, ArrayList<BasicBlock> joinBlocks) throws IOException,
+            SyntaxFormatException {
         Result condition = null;
-        Result left = expression(curBlock, joinBlock);
+        Result left = expression(curBlock, joinBlocks);
         if (isRelOp()) {
             Token op = token;
             moveToNextToken();
-            Result right = expression(curBlock, joinBlock);
+            Result right = expression(curBlock, joinBlocks);
             icGen.computeCmpOp(curBlock, Instruction.cmp, left, right);
             condition = new Result();
             condition.kind = Result.Type.condition;
@@ -186,19 +192,22 @@ public class Parser {
         return condition;
     }
 
-    private void assignment(BasicBlock curBlock, BasicBlock joinBlock) throws Throwable {
+    private void assignment(BasicBlock curBlock, ArrayList<BasicBlock> joinBlocks) throws Throwable {
         if (token == Token.LET) {
             moveToNextToken();
-            Result variable = designator(curBlock, joinBlock);
+            Result variable = designator(curBlock, joinBlocks);
             // create phi func in joinBlock if it exists
-            if (joinBlock != null) {
-                joinBlock.createPhiFunction(variable.address, curBlock);
+            if (joinBlocks != null && joinBlocks.size() > 0) {
+                joinBlocks.get(joinBlocks.size() - 1).createPhiFunction(variable.address, curBlock);
             }
             if (token == Token.BECOMETO) {
                 moveToNextToken();
                 // assignedValue should be a instrution#
-                Result assignedValue = expression(curBlock, joinBlock);
-                icGen.assign(curBlock, joinBlock, variable, assignedValue);
+                Result assignedValue = expression(curBlock, joinBlocks);
+                if (joinBlocks != null)
+                    icGen.assign(curBlock, joinBlocks.get(joinBlocks.size() - 1), variable, assignedValue);
+                else
+                    icGen.assign(curBlock, null, variable, assignedValue);
             } else {
                 throwFormatException("<- expected in assignment");
             }
@@ -206,7 +215,8 @@ public class Parser {
             throwFormatException("let expected in assignment");
     }
 
-    private Result funcCall(BasicBlock curBlock, BasicBlock joinBlock) throws IOException, SyntaxFormatException {
+    private Result funcCall(BasicBlock curBlock, ArrayList<BasicBlock> joinBlocks) throws IOException,
+            SyntaxFormatException {
         Result x = new Result();
         Function func = null;
         if (token == Token.CALL) {
@@ -224,13 +234,13 @@ public class Parser {
                     Result y = new Result();
                     if (isExpression()) { // expression -> term -> factor ->
                                           // designator -> identifier
-                        y = expression(curBlock, joinBlock);
+                        y = expression(curBlock, joinBlocks);
                         if (x.address >= 3)
                             icGen.generateAssignParameterOp(curBlock, y, func.getParameters().get(index++));
 
                         while (token == Token.COMMA) {
                             moveToNextToken();
-                            y = expression(curBlock, joinBlock);
+                            y = expression(curBlock, joinBlocks);
                             if (x.address >= 3)
                                 icGen.generateAssignParameterOp(curBlock, y, func.getParameters().get(index++));
                         }
@@ -274,7 +284,9 @@ public class Parser {
         }
     }
 
-    private BasicBlock ifStatement(BasicBlock curBlock, Function function) throws Throwable {
+    private BasicBlock ifStatement(BasicBlock curBlock, ArrayList<BasicBlock> joinBlocks, Function function)
+            throws Throwable {
+        HashMap<Integer, ArrayList<SSA>> ssaMap = VariableManager.deepCopySSAMap();
         if (token == Token.IF) {
             moveToNextToken();
             Result follow = new Result();
@@ -291,29 +303,38 @@ public class Parser {
 
             if (token == Token.THEN) {
                 moveToNextToken();
-                ifLastBlock = statSequence(curBlock.makeIfSuccessor(), joinBlock, function);
+                if (joinBlocks == null)
+                    joinBlocks = new ArrayList<BasicBlock>();
+                joinBlocks.add(joinBlock);
+                ifLastBlock = statSequence(curBlock.makeIfSuccessor(), joinBlocks, function);
                 if (token == Token.ELSE) {
+                    VariableManager.setSsaMap(ssaMap);
                     moveToNextToken();
                     icGen.unCondBraFwd(ifLastBlock, follow);
                     BasicBlock elseBlock = curBlock.makeElseSuccessor();
                     icGen.fixup(x.fixuplocation, elseBlock); // set target of
                                                              // NegBraFwd
-                    elseLastBlock = statSequence(elseBlock, joinBlock, function);
+                    elseLastBlock = statSequence(elseBlock, joinBlocks, function);
                 } else {
                     icGen.fixup(x.fixuplocation, joinBlock);
                 }
                 if (token == Token.FI) {
                     moveToNextToken();
-                    icGen.fixAll(follow.fixuplocation, joinBlock); // set follow
+                    icGen.fixAll(follow.fixuplocation, joinBlock); // set follow 
                                                                    // as target
                                                                    // for all
                                                                    // if and
                                                                    // elseif
                     linkJoinBlock(curBlock, ifLastBlock, elseLastBlock, joinBlock);
 
+                    for (BasicBlock jB : joinBlocks)
+                        updateValuesInPhiFuncForSuccessorBlock(ifLastBlock.getPhiFuncs(), jB, true);
+                    if (elseLastBlock != null)
+                        updateValuesInPhiFuncForSuccessorBlock(elseLastBlock.getPhiFuncs(), joinBlock, false);
                     // update all values to be results of phi functions
-                    updateReferenceForPhiVarInIfJoinBlock(joinBlock);
+                    updateReferenceForPhiVarInJoinBlock(joinBlock);
 
+                    VariableManager.setSsaMap(ssaMap);
                     return joinBlock;
                 } else
                     throwFormatException("fi expected in ifStatement");
@@ -324,13 +345,14 @@ public class Parser {
         throw new Exception("Programmer error in ifStatement!");
     }
 
-    public void updateReferenceForPhiVarInIfJoinBlock(BasicBlock joinBlock) {
+    public void updateReferenceForPhiVarInJoinBlock(BasicBlock joinBlock) {
         for (Map.Entry<Integer, Instruction> entry : joinBlock.getPhiFuncs().entrySet()) {
             VariableManager.addSSA(entry.getKey(), entry.getValue().getSelfPC());
         }
     }
 
-    private BasicBlock whileStatement(BasicBlock curBlock, Function function) throws Throwable {
+    private BasicBlock whileStatement(BasicBlock curBlock, ArrayList<BasicBlock> joinBlocks, Function function)
+            throws Throwable {
         if (token == Token.WHILE) {
             moveToNextToken();
 
@@ -344,11 +366,13 @@ public class Parser {
             if (token == Token.DO) {
                 moveToNextToken();
                 BasicBlock startBlock = curBlock.makeDoSuccessor();
-                doLastBlock = statSequence(startBlock, innerJoinBlock, function);
+                if (joinBlocks == null)
+                    joinBlocks = new ArrayList<BasicBlock>();
+                joinBlocks.add(innerJoinBlock);
+                doLastBlock = statSequence(startBlock, joinBlocks, function);
                 doLastBlock.generateIntermediateCode(Instruction.bra, null, Result.makeBranch(curBlock));
-                
+
                 // update values in the phi function of doLastBlock
-//                updateValuesInPhiFunc(doLastBlock.getPhiFuncs());
                 updateReferenceForPhiVarInLoopBody(innerJoinBlock, startBlock, doLastBlock);
 
                 BasicBlock followBlock = curBlock.makeElseSuccessor();
@@ -356,6 +380,14 @@ public class Parser {
 
                 // link loop block back to condition
                 doLastBlock.setBackSuccessor(curBlock);
+                
+                joinBlocks.remove(joinBlocks.size() - 1);
+                for (BasicBlock jB : joinBlocks){
+                    updateValuesInPhiFuncForSuccessorBlock(innerJoinBlock.getPhiFuncs(), jB, false);
+                }
+                // update all values to be results of phi functions
+                updateReferenceForPhiVarInJoinBlock(innerJoinBlock);
+
                 // curBlock.setDirectPredecessor(doLastBlock);
 
                 if (token == Token.OD) {
@@ -369,12 +401,26 @@ public class Parser {
             throwFormatException("while expected in whileStatement");
         throw new Exception("Programmer error!");
     }
-    
-    public void updateValuesInPhiFunc(HashMap<Integer, Instruction> phifuncs, BasicBlock joinBlock){
-        for(Instruction instr : phifuncs.values()){
-//            if(joinBlock.getPhiFuncs())
+
+    public void updateValuesInPhiFuncForSuccessorBlock(HashMap<Integer, Instruction> phifuncs, BasicBlock joinBlock,
+            boolean fromLeft) {
+        if (fromLeft) {
+            for (Map.Entry<Integer, Instruction> entry1 : phifuncs.entrySet()) {
+                for (Map.Entry<Integer, Instruction> entry2 : joinBlock.getPhiFuncs().entrySet()) {
+                    if (entry1.getKey() == entry2.getKey())
+                        entry2.getValue().setSsa1(new SSA(entry1.getValue().getSelfPC()));
+                }
+            }
+        } else {
+            for (Map.Entry<Integer, Instruction> entry1 : phifuncs.entrySet()) {
+                for (Map.Entry<Integer, Instruction> entry2 : joinBlock.getPhiFuncs().entrySet()) {
+                    if (entry1.getKey() == entry2.getKey())
+                        entry2.getValue().setSsa2(new SSA(entry1.getValue().getSelfPC()));
+                }
+            }
         }
     }
+
     public void updateReferenceForPhiVarInLoopBody(BasicBlock innerJoinBlock, BasicBlock startBlock,
             BasicBlock doLastBlock) throws Throwable {
         for (Map.Entry<Integer, Instruction> entry : innerJoinBlock.getPhiFuncs().entrySet())
@@ -382,13 +428,14 @@ public class Parser {
                     .getValue().getSelfPC(), startBlock, doLastBlock);
     }
 
-    private Result returnStatement(BasicBlock curBlock, BasicBlock joinBlock) throws IOException, SyntaxFormatException {
+    private Result returnStatement(BasicBlock curBlock, ArrayList<BasicBlock> joinBlocks) throws IOException,
+            SyntaxFormatException {
         Result x = new Result();
         if (token == Token.RETURN) {
             moveToNextToken();
             if (isExpression()) { // expression -> term -> factor -> designator
                                   // -> identifier
-                x = expression(curBlock, joinBlock);
+                x = expression(curBlock, joinBlocks);
             }
         } else
             throwFormatException("return expected in returnStatement");
@@ -400,19 +447,20 @@ public class Parser {
                 || token == Token.RETURN;
     }
 
-    private BasicBlock statement(BasicBlock curBlock, BasicBlock joinBlock, Function function) throws Throwable {
+    private BasicBlock statement(BasicBlock curBlock, ArrayList<BasicBlock> joinBlocks, Function function)
+            throws Throwable {
         if (token == Token.LET) { // assignment
-            assignment(curBlock, joinBlock);
+            assignment(curBlock, joinBlocks);
             return curBlock;
         } else if (token == Token.CALL) { // funcCall
-            funcCall(curBlock, joinBlock);
+            funcCall(curBlock, joinBlocks);
             return curBlock;
         } else if (token == Token.IF) { // ifStatement
-            return ifStatement(curBlock, function);
+            return ifStatement(curBlock, joinBlocks, function);
         } else if (token == Token.WHILE) { // whileStatement
-            return whileStatement(curBlock, function);
+            return whileStatement(curBlock, joinBlocks, function);
         } else if (token == Token.RETURN) { // returnStatement
-            Result x = returnStatement(curBlock, joinBlock);
+            Result x = returnStatement(curBlock, joinBlocks);
             icGen.generateReturnOp(curBlock, x, function);
             return curBlock;
         } else
@@ -420,11 +468,12 @@ public class Parser {
         throw new Exception("Programmer error in statement!");
     }
 
-    private BasicBlock statSequence(BasicBlock curBlock, BasicBlock joinBlock, Function function) throws Throwable {
-        BasicBlock lastBlock = statement(curBlock, joinBlock, function);
+    private BasicBlock statSequence(BasicBlock curBlock, ArrayList<BasicBlock> joinBlocks, Function function)
+            throws Throwable {
+        BasicBlock lastBlock = statement(curBlock, joinBlocks, function);
         while (token == Token.SEMICOMA) {
             moveToNextToken();
-            lastBlock = statement(lastBlock, joinBlock, function);
+            lastBlock = statement(lastBlock, joinBlocks, function);
         }
         return lastBlock;
     }
@@ -569,13 +618,13 @@ public class Parser {
     }
 
     public static void main(String[] args) throws Throwable {
-        String testprog = "while_if";
-        Parser ps = new Parser("src/test/resources/testprogs/bug/" + testprog + ".txt");
+        String testprog = "nestedwhile";
+        Parser ps = new Parser("src/test/resources/testprogs/while/" + testprog + ".txt");
         ps.parse();
         ControlFlowGraph.printIntermediateCode();
         VCGPrinter printer = new VCGPrinter(testprog);
         printer.printCFG();
-        
+
         System.out.println(ControlFlowGraph.xPreDefUseChains);
         System.out.println(ControlFlowGraph.yPreDefUseChains);
     }
