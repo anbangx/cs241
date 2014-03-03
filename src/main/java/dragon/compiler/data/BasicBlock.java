@@ -11,6 +11,7 @@ import java.util.Queue;
 import dragon.compiler.parser.ControlFlowGraph;
 import dragon.compiler.parser.PhiFuncManager;
 import dragon.compiler.parser.VariableManager;
+import dragon.compiler.parser.PhiFuncManager.Update_Type;
 
 public class BasicBlock {
     public enum Type {
@@ -32,6 +33,8 @@ public class BasicBlock {
     // used in if-else statement for traversing CFG
     private BasicBlock joinSuccessor;
 
+    private BasicBlock predecessor;
+
     // used in while statement
     private BasicBlock backSuccessor;
 
@@ -44,16 +47,21 @@ public class BasicBlock {
         directSuccessor = null;
         elseSuccessor = null;
         joinSuccessor = null;
+        predecessor = null;
     }
 
-    public void createPhiFunction(int ident, BasicBlock curBlock) throws SyntaxFormatException {
-        phiFuncManager.createPhiInstruction(ident, VariableManager.getLastVersionSSA(ident));
+    public Instruction createPhiFunction(int ident) throws SyntaxFormatException {
+        return phiFuncManager.createPhiInstruction(ident, VariableManager.getLastVersionSSA(ident));
     }
 
     public void updatePhiFunction(int ident, SSA newSSA, Type blockType) {
         phiFuncManager.updatePhiInstruction(ident, newSSA, ControlFlowGraph.phiFuncUpdateType.get(blockType));
     }
-
+    
+    public void updatePhiFunction(int ident, SSA newSSA, Update_Type updateType) {
+        phiFuncManager.updatePhiInstruction(ident, newSSA, updateType);
+    }
+    
     public void updateVarReferenceToPhi(int ident, int oldSSA, int newSSA, BasicBlock startBlock, BasicBlock endBlock)
             throws SyntaxFormatException {
         updateVarReferenceInJoinBlock(ident, oldSSA, newSSA);
@@ -168,18 +176,21 @@ public class BasicBlock {
     public BasicBlock makeIfSuccessor() {
         BasicBlock ifSuccessor = new BasicBlock(Type.IF);
         this.directSuccessor = ifSuccessor;
+        ifSuccessor.predecessor = this;
         return ifSuccessor;
     }
 
     public BasicBlock makeElseSuccessor() {
         BasicBlock elseSuccessor = new BasicBlock(Type.ELSE);
         this.elseSuccessor = elseSuccessor;
+        elseSuccessor.predecessor = this;
         return elseSuccessor;
     }
 
     public BasicBlock makeDoSuccessor() {
         BasicBlock doSuccessor = new BasicBlock(Type.DO);
         this.directSuccessor = doSuccessor;
+        doSuccessor.predecessor = this;
         return doSuccessor;
     }
 
@@ -221,6 +232,14 @@ public class BasicBlock {
         this.backSuccessor = backSuccessor;
     }
 
+    public BasicBlock getPredecessor() {
+        return predecessor;
+    }
+
+    public void setPredecessor(BasicBlock predecessor) {
+        this.predecessor = predecessor;
+    }
+
     public int getId() {
         return id;
     }
@@ -232,7 +251,17 @@ public class BasicBlock {
     public HashMap<Integer, Instruction> getPhiFuncs() {
         return phiFuncManager.getPhiFuncs();
     }
-    
+
+    public HashMap<Integer, Instruction> getPhiFuncsFromStartBlock(BasicBlock startBlock) {
+        HashMap<Integer, Instruction> hM = new HashMap<Integer, Instruction>();
+        BasicBlock cur = this;
+        while (cur != null && cur != startBlock) {
+            hM.putAll(cur.getPhiFuncs());
+            cur = cur.getPredecessor();
+        }
+        return hM;
+    }
+
     public Queue<BasicBlock> getSuccessors() {
         Queue<BasicBlock> successors = new LinkedList<BasicBlock>();
         if (directSuccessor != null)
@@ -243,5 +272,34 @@ public class BasicBlock {
             successors.add(joinSuccessor);
         return successors;
     }
+
+    public HashSet<Integer> getPhiVars() {
+        HashSet<Integer> vars = new HashSet<Integer>();
+        vars.addAll(this.getPhiFuncs().keySet());
+        return vars;
+    }
+
+    public HashSet<Integer> getPhiVars(BasicBlock startBlock) {
+        HashSet<Integer> vars = new HashSet<Integer>();
+        BasicBlock cur = this;
+        while (cur != null && cur != startBlock) {
+            vars.addAll(cur.getPhiFuncs().keySet());
+            cur = cur.getPredecessor();
+        }
+        return vars;
+    }
     
+    public SSA findLastSSA(int ident, BasicBlock startBlock){
+        BasicBlock cur = this;
+        while (cur != null && cur != startBlock) {
+            for(Map.Entry<Integer, Instruction> entry : cur.getPhiFuncs().entrySet()){
+                if(entry.getKey() == ident){
+                    return new SSA(entry.getValue().getSelfPC());
+                }
+            }
+            cur = cur.getPredecessor();
+        }
+        return null;
+    }
+
 }

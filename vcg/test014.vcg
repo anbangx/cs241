@@ -5,9 +5,9 @@ smanhattan_edges: yes
 node: {
 title: "1"
 label: "1[
-1: move 0 a_1
-2: move 0 b_2
-3: move 1 a_3
+0: move 0 a_0
+1: move 0 b_1
+2: move 1 a_2
 ]"
 }
 edge: { sourcename: "1"
@@ -17,10 +17,10 @@ color: blue
 node: {
 title: "2"
 label: "2[
-9: phi a_9 a_3 a_11
-6: phi b_6 b_2 b_8
-4: cmp a_9 b_6
-5: beq [4]
+8: phi a_8 a_2 a_10
+5: phi b_5 b_1 b_7
+3: cmp a_8 b_5
+4: beq [4]
 ]"
 }
 edge: { sourcename: "2"
@@ -34,11 +34,11 @@ color: blue
 node: {
 title: "3"
 label: "3[
-7: add a_9 1
-8: move (7) b_8
-10: mul a_9 2
-11: move (10) a_11
-12: bra [2]
+6: add a_8 1
+7: move (6) b_7
+9: mul a_8 2
+10: move (9) a_10
+11: bra [2]
 ]"
 }
 edge: { sourcename: "3"
@@ -48,8 +48,8 @@ color: blue
 node: {
 title: "4"
 label: "4[
-13: move a_11 b_13
-14: end 
+12: move a_8 b_12
+13: end 
 ]"
 }
 }

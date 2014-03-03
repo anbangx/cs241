@@ -3,6 +3,7 @@ package dragon.compiler.parser;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -198,7 +199,7 @@ public class Parser {
             Result variable = designator(curBlock, joinBlocks);
             // create phi func in joinBlock if it exists
             if (joinBlocks != null && joinBlocks.size() > 0) {
-                joinBlocks.get(joinBlocks.size() - 1).createPhiFunction(variable.address, curBlock);
+                joinBlocks.get(joinBlocks.size() - 1).createPhiFunction(variable.address);
             }
             if (token == Token.BECOMETO) {
                 moveToNextToken();
@@ -307,6 +308,7 @@ public class Parser {
                     joinBlocks = new ArrayList<BasicBlock>();
                 joinBlocks.add(joinBlock);
                 ifLastBlock = statSequence(curBlock.makeIfSuccessor(), joinBlocks, function);
+                joinBlocks.remove(joinBlocks.size() - 1);
                 if (token == Token.ELSE) {
                     VariableManager.setSsaMap(ssaMap);
                     moveToNextToken();
@@ -314,11 +316,14 @@ public class Parser {
                     BasicBlock elseBlock = curBlock.makeElseSuccessor();
                     icGen.fixup(x.fixuplocation, elseBlock); // set target of
                                                              // NegBraFwd
+                    joinBlocks.add(joinBlock);
                     elseLastBlock = statSequence(elseBlock, joinBlocks, function);
+                    joinBlocks.remove(joinBlocks.size() - 1);
                 } else {
                     icGen.fixup(x.fixuplocation, joinBlock);
                 }
                 if (token == Token.FI) {
+//                    joinBlocks.add(joinBlock);
                     moveToNextToken();
                     icGen.fixAll(follow.fixuplocation, joinBlock); // set follow 
                                                                    // as target
@@ -326,15 +331,18 @@ public class Parser {
                                                                    // if and
                                                                    // elseif
                     linkJoinBlock(curBlock, ifLastBlock, elseLastBlock, joinBlock);
-
-                    for (BasicBlock jB : joinBlocks)
-                        updateValuesInPhiFuncForSuccessorBlock(ifLastBlock.getPhiFuncs(), jB, true);
-                    if (elseLastBlock != null)
-                        updateValuesInPhiFuncForSuccessorBlock(elseLastBlock.getPhiFuncs(), joinBlock, false);
+                    
+                    // update phi existed func occur in the previous join blocks
+                    updatePhiFuncsOccurInPreviousJoinBlocks(curBlock, ifLastBlock, elseLastBlock, joinBlock, ssaMap);
+                    
+                    // create non-existed phi funcs occur in the previous join blocks
+                    createPhiFuncsOccurInPreviousJoinBlocks(curBlock, ifLastBlock, elseLastBlock, joinBlock, ssaMap);
+                    
+                    VariableManager.setSsaMap(ssaMap);
+                    
                     // update all values to be results of phi functions
                     updateReferenceForPhiVarInJoinBlock(joinBlock);
 
-                    VariableManager.setSsaMap(ssaMap);
                     return joinBlock;
                 } else
                     throwFormatException("fi expected in ifStatement");
@@ -344,7 +352,45 @@ public class Parser {
             throwFormatException("if expected in ifStatement");
         throw new Exception("Programmer error in ifStatement!");
     }
-
+    
+    public void updatePhiFuncsOccurInPreviousJoinBlocks(BasicBlock curBlock, BasicBlock ifLastBlock,
+            BasicBlock elseLastBlock, BasicBlock joinBlock, HashMap<Integer, ArrayList<SSA>> ssaMap){
+        HashMap<Integer, Instruction> leftPhiFuncs = ifLastBlock.getPhiFuncsFromStartBlock(curBlock);
+        updateValuesInPhiFuncForSuccessorBlock(leftPhiFuncs, joinBlock, true);
+        if (elseLastBlock != null){
+            HashMap<Integer, Instruction> rightPhiFuncs = elseLastBlock.getPhiFuncsFromStartBlock(curBlock);
+            updateValuesInPhiFuncForSuccessorBlock(rightPhiFuncs, joinBlock, false);
+        }else{
+            for (Integer phiVar : joinBlock.getPhiFuncs().keySet()) {
+                joinBlock.updatePhiFunction(phiVar, ssaMap.get(phiVar).get(ssaMap.get(phiVar).size() - 1), PhiFuncManager.Update_Type.RIGHT);
+            }
+        }
+    }
+    
+    public void createPhiFuncsOccurInPreviousJoinBlocks(BasicBlock curBlock, BasicBlock ifLastBlock,
+            BasicBlock elseLastBlock, BasicBlock joinBlock, HashMap<Integer, ArrayList<SSA>> ssaMap) throws SyntaxFormatException{
+        HashSet<Integer> phiVars = new HashSet<Integer>();
+        HashSet<Integer> ifPhiVars = ifLastBlock.getPhiVars(curBlock);
+        phiVars.addAll(ifPhiVars);
+        HashSet<Integer> elsePhiVars = null;
+        if(elseLastBlock != null){
+            elsePhiVars = elseLastBlock.getPhiVars(curBlock);
+            phiVars.addAll(elsePhiVars);
+        }
+        HashSet<Integer> curPhiVars = joinBlock.getPhiVars();
+        for(Integer phiVar : phiVars){
+            if(!curPhiVars.contains(phiVar)){
+                joinBlock.createPhiFunction(phiVar);
+                if(ifPhiVars.contains(phiVar))
+                    joinBlock.updatePhiFunction(phiVar, ifLastBlock.findLastSSA(phiVar, curBlock), PhiFuncManager.Update_Type.LEFT);
+                if(elseLastBlock != null && elsePhiVars.contains(phiVar))
+                    joinBlock.updatePhiFunction(phiVar, elseLastBlock.findLastSSA(phiVar, curBlock), PhiFuncManager.Update_Type.RIGHT);
+                else
+                    joinBlock.updatePhiFunction(phiVar, ssaMap.get(phiVar).get(ssaMap.get(phiVar).size() - 1), PhiFuncManager.Update_Type.RIGHT);
+            }
+        }
+    }
+    
     public void updateReferenceForPhiVarInJoinBlock(BasicBlock joinBlock) {
         for (Map.Entry<Integer, Instruction> entry : joinBlock.getPhiFuncs().entrySet()) {
             VariableManager.addSSA(entry.getKey(), entry.getValue().getSelfPC());
@@ -371,7 +417,7 @@ public class Parser {
                 joinBlocks.add(innerJoinBlock);
                 doLastBlock = statSequence(startBlock, joinBlocks, function);
                 doLastBlock.generateIntermediateCode(Instruction.bra, null, Result.makeBranch(curBlock));
-
+                
                 // update values in the phi function of doLastBlock
                 updateReferenceForPhiVarInLoopBody(innerJoinBlock, startBlock, doLastBlock);
 
@@ -385,6 +431,9 @@ public class Parser {
                 for (BasicBlock jB : joinBlocks){
                     updateValuesInPhiFuncForSuccessorBlock(innerJoinBlock.getPhiFuncs(), jB, false);
                 }
+                
+                // create phi funcs occur in the previous join blocks
+//                createPhiFuncsOccurInPreviousJoinBlocks(curBlock, doLastBlock, joinBlocks);
                 // update all values to be results of phi functions
                 updateReferenceForPhiVarInJoinBlock(innerJoinBlock);
 
@@ -401,7 +450,22 @@ public class Parser {
             throwFormatException("while expected in whileStatement");
         throw new Exception("Programmer error!");
     }
-
+    
+    public void createPhiFuncsOccurInPreviousJoinBlocks(BasicBlock curBlock, BasicBlock doLastBlock,
+            ArrayList<BasicBlock> joinBlocks) throws SyntaxFormatException{
+        HashSet<Integer> phiVars = new HashSet<Integer>();
+        phiVars.addAll(doLastBlock.getPhiVars(curBlock));
+        for (BasicBlock jB : joinBlocks){
+            HashSet<Integer> curPhiVars = jB.getPhiVars();
+            for(Integer phiVar : phiVars){
+                if(!curPhiVars.contains(phiVar)){
+                    jB.createPhiFunction(phiVar);
+                    jB.updatePhiFunction(phiVar, doLastBlock.findLastSSA(phiVar, curBlock), PhiFuncManager.Update_Type.RIGHT);
+                }
+            }
+        }
+    }
+    
     public void updateValuesInPhiFuncForSuccessorBlock(HashMap<Integer, Instruction> phifuncs, BasicBlock joinBlock,
             boolean fromLeft) {
         if (fromLeft) {
@@ -618,8 +682,8 @@ public class Parser {
     }
 
     public static void main(String[] args) throws Throwable {
-        String testprog = "nestedwhile";
-        Parser ps = new Parser("src/test/resources/testprogs/while/" + testprog + ".txt");
+        String testprog = "test011";
+        Parser ps = new Parser("src/test/resources/testprogs/while/pass/" + testprog + ".txt");
         ps.parse();
         ControlFlowGraph.printIntermediateCode();
         VCGPrinter printer = new VCGPrinter(testprog);
