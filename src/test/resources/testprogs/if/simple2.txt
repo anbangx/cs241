@@ -1,0 +1,12 @@
+main
+var a, c;
+{
+	if a < c then
+		let c <- c * 3;
+		while a < c do
+			let a <- a + 1
+		od
+	fi;
+	call OutputNum(a);
+	call OutputNum(c)
+}.

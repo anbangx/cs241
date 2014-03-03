@@ -1,0 +1,25 @@
+main
+
+function foo();
+var a, b, c, d, e, f, g, h;
+{
+	if a < b then
+		let a <- a + 1;
+		if b < c then
+			let c <- c * 3;
+			while a < c do
+				let a <- a + 1
+			od
+		fi;
+		let c <- 9
+	fi;
+	
+	call OutputNum(a);
+	call OutputNum(b);
+	call OutputNum(c)
+};
+
+{
+	call foo
+}
+.

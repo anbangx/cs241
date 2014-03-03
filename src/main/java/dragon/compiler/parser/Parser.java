@@ -336,7 +336,7 @@ public class Parser {
                     updatePhiFuncsOccurInPreviousJoinBlocks(curBlock, ifLastBlock, elseLastBlock, joinBlock, ssaMap);
                     
                     // create non-existed phi funcs occur in the previous join blocks
-                    createPhiFuncsOccurInPreviousJoinBlocks(curBlock, ifLastBlock, elseLastBlock, joinBlock, ssaMap);
+                    createPhiFuncsOccurInPreviousIfJoinBlocks(curBlock, ifLastBlock, elseLastBlock, joinBlock, ssaMap);
                     
                     VariableManager.setSsaMap(ssaMap);
                     
@@ -367,7 +367,7 @@ public class Parser {
         }
     }
     
-    public void createPhiFuncsOccurInPreviousJoinBlocks(BasicBlock curBlock, BasicBlock ifLastBlock,
+    public void createPhiFuncsOccurInPreviousIfJoinBlocks(BasicBlock curBlock, BasicBlock ifLastBlock,
             BasicBlock elseLastBlock, BasicBlock joinBlock, HashMap<Integer, ArrayList<SSA>> ssaMap) throws SyntaxFormatException{
         HashSet<Integer> phiVars = new HashSet<Integer>();
         HashSet<Integer> ifPhiVars = ifLastBlock.getPhiVars(curBlock);
@@ -399,6 +399,7 @@ public class Parser {
 
     private BasicBlock whileStatement(BasicBlock curBlock, ArrayList<BasicBlock> joinBlocks, Function function)
             throws Throwable {
+        HashMap<Integer, ArrayList<SSA>> ssaMap = VariableManager.deepCopySSAMap();
         if (token == Token.WHILE) {
             moveToNextToken();
 
@@ -432,8 +433,10 @@ public class Parser {
                     updateValuesInPhiFuncForSuccessorBlock(innerJoinBlock.getPhiFuncs(), jB, false);
                 }
                 
-                // create phi funcs occur in the previous join blocks
-//                createPhiFuncsOccurInPreviousJoinBlocks(curBlock, doLastBlock, joinBlocks);
+                // create non-existed phi funcs occur in the previous join blocks
+                createPhiFuncsOccurInPreviousWhileJoinBlocks(curBlock, doLastBlock, innerJoinBlock, ssaMap);
+                
+                VariableManager.setSsaMap(ssaMap);
                 // update all values to be results of phi functions
                 updateReferenceForPhiVarInJoinBlock(innerJoinBlock);
 
@@ -451,17 +454,16 @@ public class Parser {
         throw new Exception("Programmer error!");
     }
     
-    public void createPhiFuncsOccurInPreviousJoinBlocks(BasicBlock curBlock, BasicBlock doLastBlock,
-            ArrayList<BasicBlock> joinBlocks) throws SyntaxFormatException{
+    public void createPhiFuncsOccurInPreviousWhileJoinBlocks(BasicBlock curBlock, BasicBlock doLastBlock,
+            BasicBlock joinBlock, HashMap<Integer, ArrayList<SSA>> ssaMap) throws SyntaxFormatException{
         HashSet<Integer> phiVars = new HashSet<Integer>();
         phiVars.addAll(doLastBlock.getPhiVars(curBlock));
-        for (BasicBlock jB : joinBlocks){
-            HashSet<Integer> curPhiVars = jB.getPhiVars();
-            for(Integer phiVar : phiVars){
-                if(!curPhiVars.contains(phiVar)){
-                    jB.createPhiFunction(phiVar);
-                    jB.updatePhiFunction(phiVar, doLastBlock.findLastSSA(phiVar, curBlock), PhiFuncManager.Update_Type.RIGHT);
-                }
+        HashSet<Integer> curPhiVars = joinBlock.getPhiVars();
+        for(Integer phiVar : phiVars){
+            if(!curPhiVars.contains(phiVar)){
+                joinBlock.createPhiFunction(phiVar);
+                joinBlock.updatePhiFunction(phiVar, doLastBlock.findLastSSA(phiVar, curBlock), PhiFuncManager.Update_Type.RIGHT);
+                joinBlock.updatePhiFunction(phiVar, ssaMap.get(phiVar).get(ssaMap.get(phiVar).size() - 1), PhiFuncManager.Update_Type.LEFT);
             }
         }
     }
@@ -682,8 +684,8 @@ public class Parser {
     }
 
     public static void main(String[] args) throws Throwable {
-        String testprog = "test011";
-        Parser ps = new Parser("src/test/resources/testprogs/while/pass/" + testprog + ".txt");
+        String testprog = "test010";
+        Parser ps = new Parser("src/test/resources/testprogs/while/" + testprog + ".txt");
         ps.parse();
         ControlFlowGraph.printIntermediateCode();
         VCGPrinter printer = new VCGPrinter(testprog);
