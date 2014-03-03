@@ -5,7 +5,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import dragon.compiler.data.BasicBlock;
-import dragon.compiler.data.DominatorTreeNode;
 import dragon.compiler.data.Function;
 import dragon.compiler.data.Instruction;
 import dragon.compiler.data.Result;

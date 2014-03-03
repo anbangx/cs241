@@ -1,0 +1,11 @@
+main
+var b, c, d;
+{
+	if b < c then
+		let c <- c * 3
+	else
+		let c <- c * 4;
+		let d <- d + 1
+	fi;
+	let c <- 10
+}.

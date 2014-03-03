@@ -1,0 +1,7 @@
+main
+var x, y, z;
+{
+	let x <- 1;
+	let y <- x;
+	let z <- x
+}.

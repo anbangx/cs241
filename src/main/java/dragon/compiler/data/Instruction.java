@@ -100,7 +100,9 @@ public class Instruction {
     private SSA ssa2;
     private String var;
     private boolean leftLatestUpdated;
-
+    public boolean deleted = false;
+    public int targetInstrId;
+    
     public Instruction(int op, Result result1, Result result2) {
         this.operator = op;
         this.result1 = result1;
@@ -145,7 +147,35 @@ public class Instruction {
         }
         return sb.toString();
     }
-
+    
+    public boolean isReadAssignment(){
+        return operator == Instruction.read;
+    }
+    
+    public boolean isConstantAssignment(){
+        return operator >= Instruction.add && operator <= Instruction.div 
+                && result1.kind == Result.Type.constant
+                && result2.kind == Result.Type.var;
+    }
+    
+    public boolean isVariableAssignment(){
+        return operator >= Instruction.add && operator <= Instruction.div 
+                && result1.kind == Result.Type.var
+                && result2.kind == Result.Type.var;
+    }
+    
+    public int getIdent(){
+        return result1.address;
+    }
+    
+    public int getLeftIdent(){
+        return result1.address;
+    }
+    
+    public int getRightIdent(){
+        return result2.address;
+    }
+    
     public static int getPC() {
         return pc;
     }
