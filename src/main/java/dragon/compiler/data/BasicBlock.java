@@ -301,5 +301,49 @@ public class BasicBlock {
         }
         return null;
     }
+    
+    public void assignNewSSA(int ident, SSA ssa, SSA newSSA, BasicBlock startBlock){
+        BasicBlock cur = this;
+        while (cur != null) {
+            for(Map.Entry<Integer, Instruction> entry : cur.getPhiFuncs().entrySet()){
+                if(entry.getKey() == ident && entry.getValue().getSsa1() == ssa){
+                    entry.getValue().setSsa1(newSSA);
+                }
+            }
+            HashSet<Instruction> instrs = startBlock.getAllDoInstructions();
+            for(Instruction instr : instrs){
+                if(instr.getResult1() != null && instr.getResult1().address == ident && instr.getResult1().ssa == ssa){
+                    instr.getResult1().ssa = newSSA;
+                }
+                if(instr.getResult1() != null && instr.getResult2().address == ident && instr.getResult2().ssa == ssa){
+                    instr.getResult2().ssa = newSSA;
+                }
+            }
+            if(cur == startBlock)
+                break;
+            cur = cur.getPredecessor();
+        }
+        return;
+    }
+    
+    public HashSet<Instruction> getAllDoInstructionsUtil(BasicBlock block){
+        HashSet<Instruction> instrs = new HashSet<Instruction>();
+        if(block == null)
+            return instrs;
+        instrs.addAll(block.getInstructions());
+        if(block.directSuccessor != null)
+            instrs.addAll(getAllDoInstructionsUtil(block.directSuccessor));
+        if(block.elseSuccessor != null)
+            instrs.addAll(getAllDoInstructionsUtil(block.elseSuccessor));
+        if(block.joinSuccessor != null)
+            instrs.addAll(getAllDoInstructionsUtil(block.joinSuccessor));
+        return instrs;
+    }
+    
+    public HashSet<Instruction> getAllDoInstructions(){
+        if(this.kind != Type.WHILE_JOIN)
+            return null;
+        return getAllDoInstructionsUtil(this);
+    }
 
 }

@@ -356,10 +356,10 @@ public class Parser {
     public void updatePhiFuncsOccurInPreviousJoinBlocks(BasicBlock curBlock, BasicBlock ifLastBlock,
             BasicBlock elseLastBlock, BasicBlock joinBlock, HashMap<Integer, ArrayList<SSA>> ssaMap){
         HashMap<Integer, Instruction> leftPhiFuncs = ifLastBlock.getPhiFuncsFromStartBlock(curBlock);
-        updateValuesInPhiFuncForSuccessorBlock(leftPhiFuncs, joinBlock, true);
+        updateValuesInOuterPhiFunc(leftPhiFuncs, joinBlock, true);
         if (elseLastBlock != null){
             HashMap<Integer, Instruction> rightPhiFuncs = elseLastBlock.getPhiFuncsFromStartBlock(curBlock);
-            updateValuesInPhiFuncForSuccessorBlock(rightPhiFuncs, joinBlock, false);
+            updateValuesInOuterPhiFunc(rightPhiFuncs, joinBlock, false);
         }else{
             for (Integer phiVar : joinBlock.getPhiFuncs().keySet()) {
                 joinBlock.updatePhiFunction(phiVar, ssaMap.get(phiVar).get(ssaMap.get(phiVar).size() - 1), PhiFuncManager.Update_Type.RIGHT);
@@ -394,6 +394,14 @@ public class Parser {
     public void updateReferenceForPhiVarInJoinBlock(BasicBlock joinBlock) {
         for (Map.Entry<Integer, Instruction> entry : joinBlock.getPhiFuncs().entrySet()) {
             VariableManager.addSSA(entry.getKey(), entry.getValue().getSelfPC());
+            for(Instruction instr : joinBlock.getInstructions()){
+                if(instr.getResult1() != null && instr.getResult1().address == entry.getKey()){
+                    instr.getResult1().setSSA(entry.getValue().getSelfPC());
+                }
+                if(instr.getResult2() != null && instr.getResult2().address == entry.getKey()){
+                    instr.getResult2().setSSA(entry.getValue().getSelfPC());
+                }
+            }
         }
     }
 
@@ -430,16 +438,19 @@ public class Parser {
                 
                 joinBlocks.remove(joinBlocks.size() - 1);
                 for (BasicBlock jB : joinBlocks){
-                    updateValuesInPhiFuncForSuccessorBlock(innerJoinBlock.getPhiFuncs(), jB, false);
+                    updateValuesInOuterPhiFunc(innerJoinBlock.getPhiFuncs(), jB, false);
                 }
                 
                 // create non-existed phi funcs occur in the previous join blocks
                 createPhiFuncsOccurInPreviousWhileJoinBlocks(curBlock, doLastBlock, innerJoinBlock, ssaMap);
                 
+                // update value in the inner join block
+                
+                
                 VariableManager.setSsaMap(ssaMap);
                 // update all values to be results of phi functions
                 updateReferenceForPhiVarInJoinBlock(innerJoinBlock);
-
+                
                 // curBlock.setDirectPredecessor(doLastBlock);
 
                 if (token == Token.OD) {
@@ -461,25 +472,27 @@ public class Parser {
         HashSet<Integer> curPhiVars = joinBlock.getPhiVars();
         for(Integer phiVar : phiVars){
             if(!curPhiVars.contains(phiVar)){
-                joinBlock.createPhiFunction(phiVar);
+                Instruction curInstr = joinBlock.createPhiFunction(phiVar);
                 joinBlock.updatePhiFunction(phiVar, doLastBlock.findLastSSA(phiVar, curBlock), PhiFuncManager.Update_Type.RIGHT);
                 joinBlock.updatePhiFunction(phiVar, ssaMap.get(phiVar).get(ssaMap.get(phiVar).size() - 1), PhiFuncManager.Update_Type.LEFT);
+                if(joinBlock.getKind() == BasicBlock.Type.WHILE_JOIN)
+                    doLastBlock.assignNewSSA(phiVar, ssaMap.get(phiVar).get(ssaMap.get(phiVar).size() - 1), new SSA(curInstr.getSelfPC()), curBlock);
             }
         }
     }
     
-    public void updateValuesInPhiFuncForSuccessorBlock(HashMap<Integer, Instruction> phifuncs, BasicBlock joinBlock,
+    public void updateValuesInOuterPhiFunc(HashMap<Integer, Instruction> phifuncs, BasicBlock outJoinBlock,
             boolean fromLeft) {
         if (fromLeft) {
             for (Map.Entry<Integer, Instruction> entry1 : phifuncs.entrySet()) {
-                for (Map.Entry<Integer, Instruction> entry2 : joinBlock.getPhiFuncs().entrySet()) {
+                for (Map.Entry<Integer, Instruction> entry2 : outJoinBlock.getPhiFuncs().entrySet()) {
                     if (entry1.getKey() == entry2.getKey())
                         entry2.getValue().setSsa1(new SSA(entry1.getValue().getSelfPC()));
                 }
             }
         } else {
             for (Map.Entry<Integer, Instruction> entry1 : phifuncs.entrySet()) {
-                for (Map.Entry<Integer, Instruction> entry2 : joinBlock.getPhiFuncs().entrySet()) {
+                for (Map.Entry<Integer, Instruction> entry2 : outJoinBlock.getPhiFuncs().entrySet()) {
                     if (entry1.getKey() == entry2.getKey())
                         entry2.getValue().setSsa2(new SSA(entry1.getValue().getSelfPC()));
                 }
@@ -684,7 +697,7 @@ public class Parser {
     }
 
     public static void main(String[] args) throws Throwable {
-        String testprog = "test010";
+        String testprog = "simple";
         Parser ps = new Parser("src/test/resources/testprogs/while/" + testprog + ".txt");
         ps.parse();
         ControlFlowGraph.printIntermediateCode();

@@ -94,8 +94,8 @@ public class Instruction {
 
     private int operator;
     private Type kind;
-    private Result result1;
-    private Result result2;
+    private Result result1 = null;
+    private Result result2 = null;
     private SSA ssa1;
     private SSA ssa2;
     private String var;

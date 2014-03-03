@@ -1,0 +1,9 @@
+main
+var b, c;
+{
+	while ( b + 1 ) < c do
+		while ( b + 2 ) < c do
+			let b <- b + 1
+		od
+	od
+}.
