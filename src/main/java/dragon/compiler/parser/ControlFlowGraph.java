@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import dragon.compiler.data.BasicBlock;
+import dragon.compiler.data.DominatorTreeNode;
 import dragon.compiler.data.Function;
 import dragon.compiler.data.Instruction;
 import dragon.compiler.data.Result;
@@ -104,31 +105,31 @@ public class ControlFlowGraph {
             useInstructions.add(curInstr);
         }
     }
-    
-    public static void updateXPreDefUseChains(SSA ssaDef, Instruction use){
+
+    public static void updateXPreDefUseChains(SSA ssaDef, Instruction use) {
         updateXPreDefUseChains(ControlFlowGraph.allInstructions.get(ssaDef.getVersion()), use);
     }
-    
-    public static void updateYPreDefUseChains(SSA ssaDef, Instruction use){
+
+    public static void updateYPreDefUseChains(SSA ssaDef, Instruction use) {
         updateYPreDefUseChains(ControlFlowGraph.allInstructions.get(ssaDef.getVersion()), use);
     }
-    
-    public static void updateXPreDefUseChains(Instruction def, Instruction use){
+
+    public static void updateXPreDefUseChains(Instruction def, Instruction use) {
         ArrayList<Instruction> useInstructions = null;
-        if(xPreDefUseChains.containsKey(def)){
+        if (xPreDefUseChains.containsKey(def)) {
             useInstructions = xPreDefUseChains.get(def);
-        } else{
+        } else {
             useInstructions = new ArrayList<Instruction>();
             xPreDefUseChains.put(def, useInstructions);
         }
         useInstructions.add(use);
     }
-    
-    public static void updateYPreDefUseChains(Instruction def, Instruction use){
+
+    public static void updateYPreDefUseChains(Instruction def, Instruction use) {
         ArrayList<Instruction> useInstructions = null;
-        if(yPreDefUseChains.containsKey(def)){
+        if (yPreDefUseChains.containsKey(def)) {
             useInstructions = xPreDefUseChains.get(def);
-        } else{
+        } else {
             useInstructions = new ArrayList<Instruction>();
             yPreDefUseChains.put(def, useInstructions);
         }

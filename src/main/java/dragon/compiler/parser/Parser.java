@@ -697,8 +697,8 @@ public class Parser {
     }
 
     public static void main(String[] args) throws Throwable {
-        String testprog = "simple";
-        Parser ps = new Parser("src/test/resources/testprogs/while/" + testprog + ".txt");
+        String testprog = "test017";
+        Parser ps = new Parser("src/test/resources/testprogs/if/pass/" + testprog + ".txt");
         ps.parse();
         ControlFlowGraph.printIntermediateCode();
         VCGPrinter printer = new VCGPrinter(testprog);
@@ -706,5 +706,7 @@ public class Parser {
 
         System.out.println(ControlFlowGraph.xPreDefUseChains);
         System.out.println(ControlFlowGraph.yPreDefUseChains);
+        DominatorTreeConstructor dtc = new DominatorTreeConstructor();
+        System.out.println(dtc.root);
     }
 }

@@ -37,7 +37,7 @@ public class BasicBlock {
 
     // used in while statement
     private BasicBlock backSuccessor;
-
+    
     public BasicBlock(Type kind) {
         this.id = ControlFlowGraph.blocks.size() + 1;
         this.kind = kind;
