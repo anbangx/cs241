@@ -1,7 +1,12 @@
 main
-var x, y, z;
+var a, b, c, d;
 {
-	let x <- 1;
-	let y <- x;
-	let z <- x
+	let b <- a;
+	let c <- b;
+	if a < 3 then
+		let d <- b + c
+	else
+		let d <- a + c
+	fi;
+	let d <- 6	
 }.

@@ -101,8 +101,10 @@ public class Instruction {
     private String var;
     private boolean leftLatestUpdated;
     public boolean deleted = false;
+    public boolean leftRepresentedByInstrId = false;
+    public boolean rightRepresentedByInstrId = false;
     public int targetInstrId;
-    
+
     public Instruction(int op, Result result1, Result result2) {
         this.operator = op;
         this.result1 = result1;
@@ -143,39 +145,60 @@ public class Instruction {
                 sb.append(result2 != null ? result2.toString() : "");
             }
         } else {
-            sb.append(var + "_" + selfPC + " " + var + "_" + ssa1.toString() + " " + var + "_" + ssa2.toString());
+            String var1 = "";
+            String var2 = "";
+            if (leftRepresentedByInstrId) {
+                var1 = "(" + this.getResult1().instrId + ")";
+            } else{
+                var1 = this.var + "_" + ssa1.toString();
+            }
+            if(rightRepresentedByInstrId){
+                var2 = "(" + this.getResult2().instrId + ")";
+            } else{
+                var2 = this.var + "_" + ssa2.toString();
+            }
+            sb.append(var + "_" + selfPC + " " + var1 + " " + var2);
+        }
+        if (deleted) {
+            sb.append("(deleted)");
         }
         return sb.toString();
     }
-    
-    public boolean isReadAssignment(){
+
+    public boolean isReadAssignment() {
         return operator == Instruction.read;
     }
-    
-    public boolean isConstantAssignment(){
-        return operator >= Instruction.add && operator <= Instruction.div 
-                && result1.kind == Result.Type.constant
-                && result2.kind == Result.Type.var;
+
+    public boolean isConstantAssignment() {
+        return operator == Instruction.move && result1.kind == Result.Type.constant && result2.kind == Result.Type.var;
     }
-    
-    public boolean isVariableAssignment(){
-        return operator >= Instruction.add && operator <= Instruction.div 
-                && result1.kind == Result.Type.var
-                && result2.kind == Result.Type.var;
+
+    public boolean isInstructionAssignment() {
+        return operator == Instruction.move && result1.kind == Result.Type.instr && result2.kind == Result.Type.var;
     }
-    
-    public int getIdent(){
+
+    public boolean isVariableAssignment() {
+        return operator == Instruction.move && result1.kind == Result.Type.var && result2.kind == Result.Type.var;
+    }
+
+    public boolean isOtherAssignment() {
+        return (operator >= Instruction.add && operator <= Instruction.cmp || operator >= Instruction.bne
+                && operator >= Instruction.bgt)
+                && result1.kind == Result.Type.var && result2.kind == Result.Type.var;
+    }
+
+    public int getIdent() {
         return result1.address;
     }
-    
-    public int getLeftIdent(){
+
+    public int getLeftIdent() {
         return result1.address;
     }
-    
-    public int getRightIdent(){
+
+    public int getRightIdent() {
         return result2.address;
     }
-    
+
     public static int getPC() {
         return pc;
     }

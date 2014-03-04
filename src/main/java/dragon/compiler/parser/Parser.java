@@ -705,7 +705,7 @@ public class Parser {
     }
 
     public static void main(String[] args) throws Throwable {
-        String testprog = "simple3";
+        String testprog = "simple2";
         Parser ps = new Parser("src/test/resources/testprogs/dominant_tree/" + testprog + ".txt");
         ps.parse();
         ControlFlowGraph.printIntermediateCode();
@@ -716,11 +716,11 @@ public class Parser {
         System.out.println(ControlFlowGraph.yPreDefUseChains);
         DominatorTreeConstructor dtc = new DominatorTreeConstructor();
         dtc.build();
-        printer.printDominantTree();
-        
-//        CopyPropagation cp = new CopyPropagation();
-//        cp.optimize(DominatorTreeConstructor.dtRoot);
-//        System.out.println(DominatorTreeConstructor.dtRoot);
 //        printer.printDominantTree();
+        
+        CopyPropagation cp = new CopyPropagation();
+        cp.optimize(DominatorTreeConstructor.dtRoot);
+        System.out.println(DominatorTreeConstructor.dtRoot);
+        printer.printDominantTree();
     }
 }

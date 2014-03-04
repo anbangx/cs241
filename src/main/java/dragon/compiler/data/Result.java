@@ -2,7 +2,7 @@ package dragon.compiler.data;
 
 import dragon.compiler.scanner.Scanner;
 
-public class Result {
+public class Result implements Comparable<Result>{
     public enum Type{
         unknown, constant, var, reg, condition, branch, instr
     }
@@ -39,6 +39,17 @@ public class Result {
 	    	this.instrId = result.instrId;
 	    	this.onlyMove = result.onlyMove;
     	}
+    }
+    
+    public Result(int ident, Instruction instr, boolean left){
+        this.kind = Result.Type.var;
+        if(left){
+            this.address = ident; 
+            this.ssa = instr.getSsa1();
+        }else{
+            this.address = ident;
+            this.ssa = instr.getSsa2();
+        }
     }
     
     public void set(Type type, int input){
@@ -125,4 +136,40 @@ public class Result {
     public boolean isIdent(int ident, int oldSSA){
     	return this.kind == Type.var && this.address == ident && this.ssa.getVersion() == oldSSA;  
     }
+
+    public boolean isVariable(){
+        return this.kind == Type.var;  
+    }
+    
+    @Override
+    public int compareTo(Result other) {
+        if(this.kind != Type.var || other.kind != Type.var)
+            try {
+                throw new Exception("Only can compare var result!");
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        if(this.address == other.address && this.ssa == other.ssa)
+            return 0;
+        return -1;
+    }
+    
+    @Override
+    public int hashCode() {
+        return this.address * 17 + this.ssa.hashCode() * 31;
+    }
+    
+    public boolean equals(Object other){
+        Result other2 = (Result)other;
+        if(this.kind != Type.var || other2.kind != Type.var)
+            try {
+                throw new Exception("Only can compare var result!");
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        if(this.address == other2.address && this.ssa == other2.ssa)
+            return true;
+        return false;
+    }
+
 }
