@@ -180,6 +180,14 @@ public class Instruction {
     public boolean isVariableAssignment() {
         return operator == Instruction.move && result1.kind == Result.Type.var && result2.kind == Result.Type.var;
     }
+    
+    public boolean isExpressionOp(){
+        return operator >= Instruction.neg && operator <= Instruction.div;
+    }
+    
+    public int getExpressionOp(){
+        return operator;
+    }
 
     public boolean isOtherAssignment() {
         return (operator >= Instruction.add && operator <= Instruction.cmp || operator >= Instruction.bne
