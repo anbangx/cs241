@@ -1,0 +1,6 @@
+main
+var a, b, c, d;
+{
+	let c <- a + b;
+	let d <- a + b
+}.

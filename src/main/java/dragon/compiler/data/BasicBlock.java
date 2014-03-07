@@ -345,5 +345,12 @@ public class BasicBlock {
             return null;
         return getAllDoInstructionsUtil(this);
     }
-
+    
+    public Instruction getNextInstruction(Instruction instr){
+        for(int i = 0; i < instructions.size(); i++){
+            if(instructions.get(i) == instr)
+                return  instructions.get(i + 1);
+        }
+        return null;
+    }
 }

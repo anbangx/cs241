@@ -14,6 +14,7 @@ import dragon.compiler.data.Result;
 import dragon.compiler.data.SSA;
 import dragon.compiler.data.SyntaxFormatException;
 import dragon.compiler.data.Token;
+import dragon.compiler.optimizer.CommonSubexpressionElimination;
 import dragon.compiler.optimizer.CopyPropagation;
 import dragon.compiler.scanner.Scanner;
 
@@ -705,22 +706,25 @@ public class Parser {
     }
 
     public static void main(String[] args) throws Throwable {
-        String testprog = "1";
-        Parser ps = new Parser("src/test/resources/testprogs/cp/" + testprog + ".txt");
+        String testprog = "2";
+        Parser ps = new Parser("src/test/resources/testprogs/cse/" + testprog + ".txt");
         ps.parse();
         ControlFlowGraph.printIntermediateCode();
         VCGPrinter printer = new VCGPrinter(testprog);
-//        printer.printCFG();
+        //        printer.printCFG();
 
         System.out.println(ControlFlowGraph.xPreDefUseChains);
         System.out.println(ControlFlowGraph.yPreDefUseChains);
         DominatorTreeConstructor dtc = new DominatorTreeConstructor();
         dtc.build();
-//        printer.printDominantTree();
-        
+        //        printer.printDominantTree();
+
         CopyPropagation cp = new CopyPropagation();
         cp.optimize(DominatorTreeConstructor.dtRoot);
-        System.out.println(DominatorTreeConstructor.dtRoot);
+        //        printer.printDominantTree();
+
+        CommonSubexpressionElimination cse = new CommonSubexpressionElimination();
+        cse.optimize(DominatorTreeConstructor.dtRoot);
         printer.printDominantTree();
     }
 }

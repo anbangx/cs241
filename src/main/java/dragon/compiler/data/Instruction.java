@@ -3,7 +3,8 @@ package dragon.compiler.data;
 import dragon.compiler.parser.ControlFlowGraph;
 
 public class Instruction {
-    enum Type {
+    public enum Type {
+        REPLACE,
         PHI,
         NON_PHI;
     }
@@ -93,7 +94,7 @@ public class Instruction {
     }
 
     private int operator;
-    private Type kind;
+    public Type kind;
     private Result result1 = null;
     private Result result2 = null;
     private SSA ssa1;
@@ -136,6 +137,10 @@ public class Instruction {
     public String toString() {
         StringBuilder sb = new StringBuilder("");
         sb.append(selfPC + ": ");
+        if(kind == Type.REPLACE){
+            sb.append(" (" + targetInstrId + ")");
+            return sb.toString();
+        }
         sb.append(verbose(this.operator) + " ");
         if (kind == Type.NON_PHI) {
             if (this.operator >= bra && this.operator <= bgt) {
@@ -190,6 +195,8 @@ public class Instruction {
     }
 
     public boolean isOtherAssignment() {
+        if(result1 == null || result2 == null)
+            return false;
         return (operator >= Instruction.add && operator <= Instruction.cmp || operator >= Instruction.bne
                 && operator >= Instruction.bgt)
                 && result1.kind == Result.Type.var && result2.kind == Result.Type.var;
