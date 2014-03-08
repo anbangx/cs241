@@ -173,6 +173,10 @@ public class Instruction {
     public boolean isReadAssignment() {
         return operator == Instruction.read;
     }
+    
+    public boolean isWriteAssignment() {
+        return operator == Instruction.write || operator == Instruction.wln;
+    }
 
     public boolean isConstantAssignment() {
         return operator == Instruction.move && result1.kind == Result.Type.constant && result2.kind == Result.Type.var;

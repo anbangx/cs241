@@ -5,12 +5,12 @@ smanhattan_edges: yes
 node: {
 title: "1"
 label: "1[
-0: move 0 a_0
-1: move 0 b_1
-2: move 0 c_2
-3: move 2 a_3
-4: move 3 b_4
-5: cmp a_3 b_4
+0: move 0 a_0(deleted)
+1: move 0 b_1(deleted)
+2: move 0 c_2(deleted)
+3: move 2 a_3(deleted)
+4: move 3 b_4(deleted)
+5: cmp 2 3
 6: bge [4]
 ]"
 }
@@ -28,20 +28,20 @@ label: "2[
 7: phi a_7 a_13 a_16
 9: phi b_9 b_11 b_4
 17: phi c_17 c_2 c_18
-19: add a_7 1
-20: move (19) a_20
-21: write a_20 
+19: add r1 1
+20:  (19)
+21: write (19) 
 22: end 
 ]"
 }
 node: {
 title: "3"
 label: "3[
-8: move 1 a_8
-10: add a_8 1
-11: move (10) b_11
-12: add a_8 1
-13: move (12) a_13
+8: move 1 a_8(deleted)
+10: add 2 1(deleted)
+11:  (10)
+12: add 1 1(deleted)
+13:  (10)
 14: bra [2]
 ]"
 }
@@ -52,9 +52,9 @@ color: blue
 node: {
 title: "4"
 label: "4[
-15: add a_3 1
-16: move (15) a_16
-18: move 2 c_18
+15: add 3 1(deleted)
+16:  (15)
+18: move 2 c_18(deleted)
 ]"
 }
 edge: { sourcename: "4"

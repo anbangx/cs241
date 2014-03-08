@@ -16,6 +16,7 @@ import dragon.compiler.data.SyntaxFormatException;
 import dragon.compiler.data.Token;
 import dragon.compiler.optimizer.CommonSubexpressionElimination;
 import dragon.compiler.optimizer.CopyPropagation;
+import dragon.compiler.register.RegisterAllocator;
 import dragon.compiler.scanner.Scanner;
 
 public class Parser {
@@ -741,6 +742,10 @@ public class Parser {
         CommonSubexpressionElimination cse = new CommonSubexpressionElimination();
         cse.optimize(DominatorTreeConstructor.dtRoot);
 //        printer.printDominantTree();
+        
+        
+        RegisterAllocator ra = new RegisterAllocator();
+        ra.optimize(ControlFlowGraph.getFirstBlock());
         printer.printCFG();
     }
 }
