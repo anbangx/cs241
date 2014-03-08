@@ -1,0 +1,8 @@
+main
+var a, b, c;
+{
+	let b <- a;
+	let c <- a;
+	let d <- b + c;
+	call OutputNum(d)
+}.

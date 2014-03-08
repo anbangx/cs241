@@ -9,13 +9,18 @@ import dragon.compiler.data.Result;
 
 public class CopyPropagation {
     
-    private HashMap<Result, Integer> originalNameToInstrId; // identId -> instr#
+//    private HashMap<Result, Integer> originalNameToInstrId; // identId -> instr#
+//    private HashMap<Result, Integer> originalNameToConstant; // identId -> constant
     
     public CopyPropagation(){
-        originalNameToInstrId = new HashMap<Result, Integer>();
     }
     
     public void optimize(DominatorTreeNode root){
+        optimizeUtil(root, new HashMap<Result, Integer>(), new HashMap<Result, Integer>());
+    }
+    
+    public void optimizeUtil(DominatorTreeNode root, HashMap<Result, Integer> originalNameToInstrId,
+            HashMap<Result, Integer> originalNameToConstant){
         if(root == null)
             return;
         
@@ -26,9 +31,11 @@ public class CopyPropagation {
                 Result result = instr.getResult1();
                 originalNameToInstrId.put(result, instrId);
             } else if(instr.isConstantAssignment()){
-                instrId = instr.getSelfPC();
+                int constant = instr.getResult1().value;
                 Result result = instr.getResult2();
-                originalNameToInstrId.put(result, instrId);
+                originalNameToConstant.put(result, constant);
+                // mark constant assignment as deleted
+                instr.deleted = true;
             } else if(instr.isInstructionAssignment()){
                 instrId = instr.getResult1().instrId;
                 Result result = instr.getResult2();
@@ -36,25 +43,46 @@ public class CopyPropagation {
             } else if(instr.isVariableAssignment()){
                 Result left = instr.getResult1();
                 Result right = instr.getResult2();
-                instrId = originalNameToInstrId.get(left);
-                originalNameToInstrId.put(right, instrId);
-                // mark instr as deleted
-                instr.deleted = true;
-                instr.targetInstrId = instrId;
-            } else if(instr.isOtherAssignment()){
+                if(originalNameToConstant.containsKey(left)){
+                    int constant = originalNameToConstant.get(left);
+                    originalNameToConstant.put(right, constant);
+                    //mark instr as deleted
+                    instr.deleted = true;
+                }else{
+                    instrId = originalNameToInstrId.get(left);
+                    originalNameToInstrId.put(right, instrId);
+                    // mark instr as deleted
+                    instr.deleted = true;
+                    instr.targetInstrId = instrId;
+                }
+            } else{ // if(instr.isOtherAssignment())
                 Result left = instr.getResult1();
                 Result right = instr.getResult2();
-                if(left.isVariable()){
-                    instrId = originalNameToInstrId.get(left);
-                    // change result type to instr and assign instr#
-                    left.kind = Result.Type.instr;
-                    left.instrId = instrId;
+                if(left != null && left.isVariable()){
+                    if(originalNameToConstant.containsKey(left)){
+                        int constant = originalNameToConstant.get(left);
+                        // put constant in result
+                        left.kind = Result.Type.constant;
+                        left.value = constant;
+                    }else if(originalNameToInstrId.containsKey(left)){
+                        instrId = originalNameToInstrId.get(left);
+                        // change result type to instr and assign instr#
+                        left.kind = Result.Type.instr;
+                        left.instrId = instrId;
+                    }
                 }
-                if(right.isVariable()){
-                    instrId = originalNameToInstrId.get(right);
-                    // change result type to instr and assign instr#
-                    right.kind = Result.Type.instr;
-                    right.instrId = instrId;
+                if(right != null && right.isVariable()){
+                    if(originalNameToConstant.containsKey(right)){
+                        int constant = originalNameToConstant.get(right);
+                        // put constant in result
+                        right.kind = Result.Type.constant;
+                        right.value = constant;
+                    }else if(originalNameToInstrId.containsKey(right)){
+                        instrId = originalNameToInstrId.get(right);
+                        // change result type to instr and assign instr#
+                        right.kind = Result.Type.instr;
+                        right.instrId = instrId;
+                    }
                 }
             }
         }
@@ -64,7 +92,13 @@ public class CopyPropagation {
             Result left = new Result(entry.getKey(), oldInstr, true);
             Result right = new Result(entry.getKey(), oldInstr, false);
             int instrId;
-            if(originalNameToInstrId.containsKey(left)){
+            if(originalNameToConstant.containsKey(left)){
+                int constant = originalNameToConstant.get(left);
+                // put constant in result
+                left.kind = Result.Type.constant;
+                left.value = constant;
+                oldInstr.setResult1(left);
+            }else if(originalNameToInstrId.containsKey(left)){
                 instrId = originalNameToInstrId.get(left);
                 // change result type to instr and assign instr#
                 left.kind = Result.Type.instr;
@@ -73,7 +107,13 @@ public class CopyPropagation {
                 oldInstr.setResult1(left);
             }
             
-            if(originalNameToInstrId.containsKey(right)){
+            if(originalNameToConstant.containsKey(right)){
+                int constant = originalNameToConstant.get(right);
+                // put constant in result
+                right.kind = Result.Type.constant;
+                right.value = constant;
+                oldInstr.setResult2(right);
+            }else if(originalNameToInstrId.containsKey(right)){
                 instrId = originalNameToInstrId.get(right);
                 // change result type to instr and assign instr#
                 right.kind = Result.Type.instr;
@@ -84,7 +124,8 @@ public class CopyPropagation {
         }
         
         for(DominatorTreeNode child : root.children){
-            optimize(child);
+            optimizeUtil(child, new HashMap<Result, Integer>(originalNameToInstrId),
+                    new HashMap<Result, Integer>(originalNameToConstant));
         }
     }
 }

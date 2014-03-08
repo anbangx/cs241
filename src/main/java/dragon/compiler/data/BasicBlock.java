@@ -117,9 +117,11 @@ public class BasicBlock {
         return instr.isLeftLatestUpdated() ? instr.getSsa1() : instr.getSsa2();
     }
 
-    public void generateIntermediateCode(int op, Result result1, Result result2) {
-        instructions.add(new Instruction(op, result1 == null ? null : new Result(result1), result2 == null ? null
-                : new Result(result2)));
+    public Instruction generateIntermediateCode(int op, Result result1, Result result2) {
+        Instruction instr = new Instruction(op, result1 == null ? null : new Result(result1), result2 == null ? null
+                : new Result(result2));
+        instructions.add(instr);
+        return instr;
     }
 
     public PhiFuncManager getPhiFuncManager() {

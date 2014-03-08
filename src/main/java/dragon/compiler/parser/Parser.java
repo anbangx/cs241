@@ -126,6 +126,9 @@ public class Parser {
                 throwFormatException("( expected after )");
         } else if (token == Token.CALL) {
             x = funcCall(curBlock, joinBlocks);
+            if(x == null){
+                
+            }
         } else
             throwFormatException("not a valid factor!");
 
@@ -253,16 +256,28 @@ public class Parser {
                     } else
                         throwFormatException(") expected in funcCall");
                     // make bra to func call
-                    if (x.address < 3)
-                        icGen.generateBasicIoOp(curBlock, x.address, y);
-                    else {
+                    if (x.address == 0){
+                        // read
+                        Instruction instr = icGen.generateBasicIoOp(curBlock, x.address, null);
+                        Result ret = new Result();
+                        ret.set(Result.Type.instr, instr.getSelfPC());
+                        return ret;
+                    }else if (x.address < 3){
+                        icGen.generateBasicIoOp(curBlock, x.address, x.address == 0 ? null : y);
+                    } else {
                         Result branch = Result.makeBranch(ControlFlowGraph.existedFunctions.get(x.address)
                                 .getFirstFuncBlock());
                         curBlock.generateIntermediateCode(Instruction.bra, null, branch);
                     }
                 } else {
                     // make bra to func call
-                    if (x.address < 3)
+                    if (x.address == 0){
+                        // read
+                        Instruction instr = icGen.generateBasicIoOp(curBlock, x.address, null);
+                        Result ret = new Result();
+                        ret.set(Result.Type.instr, instr.getSelfPC());
+                        return ret;
+                    }else if (x.address < 3)
                         icGen.generateBasicIoOp(curBlock, x.address, null);
                     else {
                         Result branch = Result.makeBranch(ControlFlowGraph.existedFunctions.get(x.address)
@@ -706,8 +721,8 @@ public class Parser {
     }
 
     public static void main(String[] args) throws Throwable {
-        String testprog = "2";
-        Parser ps = new Parser("src/test/resources/testprogs/cse/" + testprog + ".txt");
+        String testprog = "6";
+        Parser ps = new Parser("src/test/resources/testprogs/register/" + testprog + ".txt");
         ps.parse();
         ControlFlowGraph.printIntermediateCode();
         VCGPrinter printer = new VCGPrinter(testprog);
@@ -725,6 +740,7 @@ public class Parser {
 
         CommonSubexpressionElimination cse = new CommonSubexpressionElimination();
         cse.optimize(DominatorTreeConstructor.dtRoot);
-        printer.printDominantTree();
+//        printer.printDominantTree();
+        printer.printCFG();
     }
 }

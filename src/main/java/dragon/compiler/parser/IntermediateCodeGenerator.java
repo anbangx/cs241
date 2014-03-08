@@ -98,8 +98,8 @@ public class IntermediateCodeGenerator {
 		curBlock.generateIntermediateCode(opCode, left, right);
 	}
 
-	public void generateBasicIoOp(BasicBlock curBlock, int ioOp, Result x) {
-		curBlock.generateIntermediateCode(basicIoOpCode.get(ioOp), x, null);
+	public Instruction generateBasicIoOp(BasicBlock curBlock, int ioOp, Result x) {
+		return curBlock.generateIntermediateCode(basicIoOpCode.get(ioOp), x, null);
 	}
 
 	public void declareVariable(BasicBlock curBlock, Result x, Function function)

@@ -31,4 +31,6 @@ public class RegisterAllocator {
     public void deAllocate(int regno) {
         registers[regno] = false;
     }
+    
+    
 }
