@@ -1,7 +1,0 @@
-main
-var a, b;
-{
-	let a <- call InputNum();
-	let b <- a;
-	call OutputNum(b)
-}.

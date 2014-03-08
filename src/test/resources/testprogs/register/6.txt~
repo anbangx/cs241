@@ -1,5 +1,0 @@
-main
-var a, b, c;
-{
-	let a <- call InputNum()
-}.
