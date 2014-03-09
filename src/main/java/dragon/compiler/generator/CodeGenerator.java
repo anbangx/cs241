@@ -9,7 +9,7 @@ import dragon.compiler.util.ControlFlowGraph;
 
 public class CodeGenerator {
     
-  //opcode
+    //opcode
     private static final int ADD = 0;
     private static final int SUB = 1;
     private static final int MUL = 2;
@@ -92,12 +92,16 @@ public class CodeGenerator {
         branchIC2C.put(Instruction.bne, BNE);
     }
     
+    public int[] getProgram() {
+        return buf;
+    }
+    
     public void generateCode(){
         for(Instruction instr : ControlFlowGraph.allInstructions){
-            //initialize operands
-            int a = 0;
-            int b = 0;
-            int c = 0;
+//            //initialize operands
+//            int a = 0;
+//            int b = 0;
+//            int c = 0;
             
             int instrId = instr.getSelfPC();
             int opcode = instr.getOperator();
