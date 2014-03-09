@@ -355,4 +355,8 @@ public class BasicBlock {
         }
         return null;
     }
+    
+    public int getFirstInstrId(){
+        return instructions.get(0).getSelfPC();
+    }
 }

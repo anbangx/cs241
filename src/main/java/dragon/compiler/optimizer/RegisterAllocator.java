@@ -72,7 +72,7 @@ public class RegisterAllocator {
     }
     
     private HashMap<Integer, Integer> id2Const = new HashMap<Integer, Integer>();
-    private HashMap<Integer, Integer> id2Regno = new HashMap<Integer, Integer>();
+    public static HashMap<Integer, Integer> id2Regno = new HashMap<Integer, Integer>();
     
     public void load(Result x) {
         if (x.kind == Result.Type.constant) {
@@ -135,5 +135,9 @@ public class RegisterAllocator {
             x.regno = id2Regno.get(x.instrId);
         }else
             throw new Exception("Programmer error!");
+    }
+    
+    public static int getRegno(int instrId){
+        return id2Regno.get(instrId);
     }
 }

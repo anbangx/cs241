@@ -3,6 +3,8 @@ package dragon.compiler.generator;
 import java.util.HashMap;
 
 import dragon.compiler.data.Instruction;
+import dragon.compiler.data.Result;
+import dragon.compiler.optimizer.RegisterAllocator;
 import dragon.compiler.util.ControlFlowGraph;
 
 public class CodeGenerator {
@@ -92,7 +94,82 @@ public class CodeGenerator {
     
     public void generateCode(){
         for(Instruction instr : ControlFlowGraph.allInstructions){
+            //initialize operands
+            int a = 0;
+            int b = 0;
+            int c = 0;
             
+            int instrId = instr.getSelfPC();
+            int opcode = instr.getOperator();
+            Result x = instr.getResult1();
+            Result y = instr.getResult2();
+            
+            if(opcode >= Instruction.add && opcode <= Instruction.cmp){
+                this.generateArithmeticInst(instrId, opcode, x, y);
+            } else if(opcode >= Instruction.bne && opcode <= Instruction.bgt){
+                this.generateBranchInst(opcode, x, y);
+            }
         }
+    }
+    
+    //generate computational instructions
+    private void generateArithmeticInst(int instrId, int opCode, Result x, Result y) {
+        int a = 0;
+        int b = 0;
+        int c = 0;
+        boolean const1 = false;
+        boolean const2 = false;
+        
+        a = RegisterAllocator.getRegno(instrId);
+        if(x.kind == Result.Type.constant) {
+            b = x.value;
+            if(b != 0) {
+                const1 = true;
+            }
+        } else {
+            b = x.regno;
+        }
+        
+        if(y.kind == Result.Type.constant) {
+            c = y.value;
+            if(c != 0) {
+                const2 = true;
+            }
+        } else {
+            c = y.regno;
+        }
+        if(a != 0) {
+            if(const1) {
+                PutF2(opCode + 16, a, c, b);
+            } else if(const2) {
+                PutF2(opCode + 16, a, b, c);
+            } else {
+                PutF2(opCode, a, b, c);
+            }
+        }   
+    }
+    
+    //Generate branch instruction
+    private void generateBranchInst(int opCode, Result x, Result y) {
+        int a = 0;
+        int b = 0;
+        int c = 0;
+        
+        a = x.regno;
+        c = y.targetBlock.getFirstInstrId() - this.pc;
+        
+        PutF2(opCode, a, b, c);
+    }
+    
+    private void PutF1(int op, int a, int b, int c) {
+        //System.out.println("instruction " + pc + ": " + op + " "+ a+ " " + b+ " " + c);
+        buf[pc++] = op << 26 | a << 21 | b << 16 | c & 0xffff;
+        
+    }
+    
+    private void PutF2(int op, int a, int b, int c) {
+        //System.out.println("instruction " + pc + ": " + op + " "+ a+ " " + b+ " " + c);
+        buf[pc++] = op << 26 | a << 21 | b << 16 | c & 0xffff;
+        
     }
 }
