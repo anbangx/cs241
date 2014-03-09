@@ -1,4 +1,4 @@
-package dragon.compiler.parser;
+package dragon.compiler.util;
 
 import java.io.FileWriter;
 import java.io.IOException;
@@ -8,7 +8,7 @@ import java.util.Map;
 import dragon.compiler.data.BasicBlock;
 import dragon.compiler.data.DominatorTreeNode;
 import dragon.compiler.data.Instruction;
-import dragon.compiler.scanner.Scanner;
+import dragon.compiler.parser.Scanner;
 
 
 public class VCGPrinter {

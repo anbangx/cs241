@@ -29,6 +29,8 @@ public class CommonSubexpressionElimination {
             return;
 
         for (Instruction instr : root.block.getInstructions()) {
+            if(instr.deleted)
+                continue;
             // replace instrId
             Result left = instr.getResult1();
             Result right = instr.getResult2();
@@ -46,7 +48,9 @@ public class CommonSubexpressionElimination {
                 if (!exp2Id.containsKey(exp)) {
                     exp2Id.put(exp, instr.getSelfPC());
                     // mark next instr as replace instr#
-                    replaceNextInstructionId(root.block.getNextInstruction(instr), instr.getSelfPC());
+                    Instruction next = root.block.getNextInstruction(instr);
+                    if(!next.deleted && next.getExpressionOp() == Instruction.move)
+                        replaceNextInstructionId(root.block.getNextInstruction(instr), instr.getSelfPC());
                 } else {
                     int instrId = exp2Id.get(exp);
                     // mark instr as deleted

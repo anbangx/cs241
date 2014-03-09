@@ -28,8 +28,15 @@ public class CopyPropagation {
             int instrId;
             if(instr.isReadAssignment()){
                 instrId = instr.getSelfPC();
-                Result result = instr.getResult1();
-                originalNameToInstrId.put(result, instrId);
+                Instruction next = root.block.getNextInstruction(instr); 
+                Result readY = new Result(); instr.setResult1(readY);
+                readY.kind = next.getResult2().kind;
+                readY.address = next.getResult2().address;
+                readY.ssa = next.getResult2().ssa;
+                Result y = next.getResult2();
+                originalNameToInstrId.put(y, instrId);
+                // mark next instr as deleted
+                next.deleted = true;
             } else if(instr.isConstantAssignment()){
                 int constant = instr.getResult1().value;
                 Result result = instr.getResult2();
@@ -40,6 +47,8 @@ public class CopyPropagation {
                 instrId = instr.getResult1().instrId;
                 Result result = instr.getResult2();
                 originalNameToInstrId.put(result, instrId);
+                // mark instruction assignment as deleted
+                instr.deleted = true;
             } else if(instr.isVariableAssignment()){
                 Result left = instr.getResult1();
                 Result right = instr.getResult2();

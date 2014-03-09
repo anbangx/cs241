@@ -4,9 +4,9 @@ import java.io.File;
 
 import org.junit.Test;
 
-import dragon.compiler.parser.ControlFlowGraph;
 import dragon.compiler.parser.Parser;
-import dragon.compiler.parser.VCGPrinter;
+import dragon.compiler.util.ControlFlowGraph;
+import dragon.compiler.util.VCGPrinter;
 
 public class IntermediateCodeGeneratorTest {
 

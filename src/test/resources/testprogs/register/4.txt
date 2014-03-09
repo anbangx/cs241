@@ -1,6 +1,9 @@
 main
-var a, b;
+var a, b, c, d;
 {
 	let b <- a;
-	call OutputNum(b)
+	let c <- a;
+	let d <- b + c;
+	let d <- d + 1;
+	call OutputNum(d)
 }.

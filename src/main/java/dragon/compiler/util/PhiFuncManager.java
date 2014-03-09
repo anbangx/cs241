@@ -1,4 +1,4 @@
-package dragon.compiler.parser;
+package dragon.compiler.util;
 
 import java.util.HashMap;
 

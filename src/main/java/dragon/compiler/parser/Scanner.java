@@ -1,11 +1,10 @@
-package dragon.compiler.scanner;
+package dragon.compiler.parser;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 
 import dragon.compiler.data.Token;
-import dragon.compiler.reader.Reader;
 
 public class Scanner {
 	

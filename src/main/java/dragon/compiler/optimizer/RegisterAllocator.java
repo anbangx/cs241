@@ -1,4 +1,4 @@
-package dragon.compiler.register;
+package dragon.compiler.optimizer;
 
 import java.util.HashMap;
 
@@ -46,12 +46,12 @@ public class RegisterAllocator {
             if(instr.deleted)
                 continue;
             if(instr.isReadAssignment()){
-                Result x = root.getNextInstruction(instr).getResult2();
+                Result x = instr.getResult1(); //root.getNextInstruction(instr).getResult2();
                 load(x);
                 id2Regno.put(instr.getSelfPC(), x.regno);
             } else if(instr.isExpressionOp()){
                 computeArithmeticOp(instr);
-            } else if(instr.isWriteAssignment()){
+            } else if(instr.isWriteAssignment()){ 
                 Result x = instr.getResult1();
                 mapInstridToConstOrRegno(x);
             }
@@ -113,12 +113,14 @@ public class RegisterAllocator {
                 load(x);
             }else if(x.kind == Result.Type.instr){
                 mapInstridToConstOrRegno(x);
+                computeArithmeticOp(instr);
             }
             if(y.kind == Result.Type.var){
                 load(y);
                 this.deAllocate(y.regno);
             }else if(y.kind == Result.Type.instr){
                 mapInstridToConstOrRegno(y);
+                computeArithmeticOp(instr);
             }
             id2Regno.put(instr.getSelfPC(), x.regno);
         }

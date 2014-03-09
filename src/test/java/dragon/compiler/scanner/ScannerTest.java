@@ -7,6 +7,7 @@ import java.io.IOException;
 import org.junit.Test;
 
 import dragon.compiler.data.Token;
+import dragon.compiler.parser.Scanner;
 
 public class ScannerTest {
 

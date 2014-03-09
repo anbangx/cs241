@@ -1,4 +1,4 @@
-package dragon.compiler.reader;
+package dragon.compiler.parser;
 
 import java.io.BufferedReader;
 import java.io.File;

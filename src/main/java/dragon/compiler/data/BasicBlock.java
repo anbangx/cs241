@@ -8,10 +8,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 
-import dragon.compiler.parser.ControlFlowGraph;
-import dragon.compiler.parser.PhiFuncManager;
-import dragon.compiler.parser.VariableManager;
-import dragon.compiler.parser.PhiFuncManager.Update_Type;
+import dragon.compiler.util.ControlFlowGraph;
+import dragon.compiler.util.PhiFuncManager;
+import dragon.compiler.util.VariableManager;
+import dragon.compiler.util.PhiFuncManager.Update_Type;
 
 public class BasicBlock {
     public enum Type {

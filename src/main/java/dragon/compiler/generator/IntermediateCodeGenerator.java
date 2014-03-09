@@ -1,4 +1,4 @@
-package dragon.compiler.parser;
+package dragon.compiler.generator;
 
 import java.util.HashMap;
 
@@ -7,7 +7,9 @@ import dragon.compiler.data.Function;
 import dragon.compiler.data.Instruction;
 import dragon.compiler.data.Result;
 import dragon.compiler.data.Token;
-import dragon.compiler.register.RegisterAllocator;
+import dragon.compiler.optimizer.RegisterAllocator;
+import dragon.compiler.util.ControlFlowGraph;
+import dragon.compiler.util.VariableManager;
 
 public class IntermediateCodeGenerator {
 

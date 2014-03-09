@@ -1,6 +1,6 @@
 package dragon.compiler.data;
 
-import dragon.compiler.parser.ControlFlowGraph;
+import dragon.compiler.util.ControlFlowGraph;
 
 public class Instruction {
     public enum Type {

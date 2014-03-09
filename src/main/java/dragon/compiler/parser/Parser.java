@@ -14,10 +14,15 @@ import dragon.compiler.data.Result;
 import dragon.compiler.data.SSA;
 import dragon.compiler.data.SyntaxFormatException;
 import dragon.compiler.data.Token;
+import dragon.compiler.generator.IntermediateCodeGenerator;
 import dragon.compiler.optimizer.CommonSubexpressionElimination;
 import dragon.compiler.optimizer.CopyPropagation;
-import dragon.compiler.register.RegisterAllocator;
-import dragon.compiler.scanner.Scanner;
+import dragon.compiler.optimizer.RegisterAllocator;
+import dragon.compiler.util.ControlFlowGraph;
+import dragon.compiler.util.DominatorTreeConstructor;
+import dragon.compiler.util.PhiFuncManager;
+import dragon.compiler.util.VCGPrinter;
+import dragon.compiler.util.VariableManager;
 
 public class Parser {
 
@@ -722,7 +727,7 @@ public class Parser {
     }
 
     public static void main(String[] args) throws Throwable {
-        String testprog = "6";
+        String testprog = "2";
         Parser ps = new Parser("src/test/resources/testprogs/register/" + testprog + ".txt");
         ps.parse();
         ControlFlowGraph.printIntermediateCode();

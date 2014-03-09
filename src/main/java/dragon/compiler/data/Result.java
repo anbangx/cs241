@@ -1,6 +1,6 @@
 package dragon.compiler.data;
 
-import dragon.compiler.scanner.Scanner;
+import dragon.compiler.parser.Scanner;
 
 public class Result implements Comparable<Result>{
     public enum Type{
