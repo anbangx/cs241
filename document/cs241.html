@@ -1,0 +1,295 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+<title>Michael Franz</title>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+<meta name="Description" content="Home Page of Professor Michael Franz, University of California, Irvine">
+<meta name="Keywords" content="Michael Franz, Associate Professor, Computer Science, University of California, Irvine, UCI">
+</head>
+
+<body>
+<table bgcolor="#000099" border="0" bordercolor="#000099" cellpadding="0" cellspacing="0" width="100%">
+<tbody><tr>
+<!-- top row with logo and menu -->
+    <td bgcolor="#000099" width="100%"><table border="1" bordercolor="#000099" cellpadding="0" cellspacing="0" width="100%">
+      <tbody><tr>
+        <td height="50" valign="top" width="750"><img src="cs241_files/franzlogosmall.gif" height="50" width="750"></td>
+        <td width="100%">&nbsp;</td>
+      </tr>
+    </tbody></table></td>
+
+</tr>
+
+<tr>
+<!-- bottom row with content frames -->
+
+	<td width="100%">
+	<table bgcolor="#E6E6E6" border="0" width="100%">
+
+<!-- content row 1 : navigational -->
+		<tbody><tr>
+		<td height="10" width="100%">
+			<table border="0" cellpadding="0" cellspacing="0" width="100%">
+			  <!--DWLayoutTable-->
+				<tbody><tr>
+				<td width="300"><div align="left"><strong>
+					<font color="#000099" face="Arial, Helvetica, sans-serif" size="1">
+					<a href="http://www.uci.edu/">uci</a> &gt;
+					<a href="http://www.ics.uci.edu/">ics</a> &gt;
+					<a href="http://www.google.com/search?q=franz&amp;ie=UTF-8&amp;oe=UTF-8">franz</a> &gt;  teaching &gt; winter 2014 &gt; </font> <font color="#FF0000" face="Arial, Helvetica, sans-serif" size="1">cs
+					241</font></strong></div>
+				</td>
+				<td><div align="right"><strong>
+					<font color="#000099" face="Arial, Helvetica, sans-serif" size="1">
+					<a href="http://www.michaelfranz.com/">home</a>
+					</font>
+					</strong></div>
+				</td>
+				</tr>
+			</tbody></table></td>
+		</tr>
+    
+<!-- content row 2: spacer -->
+		<tr>
+		<td height="10"><img src="cs241_files/spacer.gif" height="1" width="1"></td>
+		</tr>
+    
+<!-- content row 3: title -->
+		<tr>
+		<td><h1 align="center">CS 241 &#8212; Advanced Compiler Construction, Winter 2014</h1></td>
+		</tr>
+    
+<!-- content row 4: the beef! -->
+		<tr> 
+		<td>
+		
+		<h3>Course Goals</h3>
+		<p>This is a graduate course on advanced compiler construction.</p>
+		<p>Two
+          developments are driving the need for new techniques of programming
+          language implementation:</p>
+        <ul>
+          <li>New hardware architectures (such as RISC and VLIW) require more
+            complex optimizations than their predecessors. We discuss essential
+            optimization techniques such as redundancy elimination, register
+            allocation, and instruction scheduling.</li>
+        </ul>
+        <ul>
+          <li>There is a continual evolution of programming languages 
+(Java, C#, JavaScript, Python, Scala, Cilk, OCaml&#8230;) providing novel 
+features that need to be implemented efficiently.&nbsp; We examine 
+advanced language-implementation topics such as type-directed dispatch, 
+garbage collection, and just-in-time code generation.</li>
+        </ul>
+        <p>These topics will be introduced in class alongside a programming project,
+          in which students have the opportunity to apply their new knowledge in
+          practice.</p>
+        <h3>Prerequisites</h3>
+        <p>No specific knowledge is assumed for this course. &nbsp;In 
+the first week, we will briefly cover all prerequisites that are 
+typically taught in an undergraduate compiler course. &nbsp;However, all
+ students in this course are expected to be expert programmers in Java, 
+C++ or similar languages. &nbsp;If you haven't programmed in Java 
+before, you will be expected to learn this quickly on your own during 
+the first three weeks of the quarter.</p>
+        <h3>Logistics</h3>
+        <ul>
+          <li>Class meets Tuesday and Thursday 5pm &#8211; 7.50pm in ICS 180. 
+&nbsp;Note that the class session is twice as long as would be 
+considered &#8220;normal&#8221; for a 4-unit class. &nbsp;This is because the class 
+incorporates a large project for which a lot of material needs to be 
+taught up front.&nbsp; Hence, we will have &#8220;double classes&#8221; followed by 
+class sessions that won&#8217;t be used but during which you will be expected 
+to be implementing.&nbsp; The total number of contact hours will be the 
+same as if this had been a regular 4-unit class.</li>
+          <li>&#8220;Double&#8221; 3 hour Classes will be given on on January 7th, 
+9th, 14th, 16th, 28th, and 30th, February 11th and 13th, and March 4th 
+and 6th.</li>
+          <li>A <strong>written half-way project report</strong> is due 
+on February 11th (the beginning of Week 6).&nbsp; Please state on a 
+single page what you have done so far and which of the milestones of the
+ compiler project (Step 1 &#8211; Step 5) you have completed.</li>
+          <li><strong>Finished projects must be presented in the first three days of Finals Week (March 17-19). </strong>&nbsp;You
+ should pace yourself to complete the project by then.&nbsp; If you do 
+not finish by this date, you may receive a grading penalty.</li>
+          <li><strong>Read your email!</strong>&nbsp; All email sent to your UCI email account will be considered read after 3 working days.</li>
+        </ul>
+        <h3>Topical Outline</h3>
+		<ul>
+          <li>everything an undergraduate ever needs to know about compilers (a crash repeat course in the first week)</li>
+          <li>intermediate representations, control flow analysis, dataflow analysis</li>
+          <li>value numbering and the Static Single Assignment form</li>
+          <li>redundancy elimination</li>
+          <li>register allocation</li>
+          <li>instruction scheduling</li>
+          <li>loop optimization and procedure optimization</li>
+          <li>loop optimization and procedure optimization</li>
+          <li>type-bound dispatch, run-time typing, garbage collection, functional languages</li>
+          <li>optimizing object-oriented and parallel constructs (overview)</li>
+		  </ul>
+		<h3>Grading and Course Requirements</h3>
+		<p>In a substantial programming project, students will apply their new
+ knowledge by constructing essential parts of an optimizing compiler. 
+Students may elect to work in pairs. The class grade will depend on how 
+well you do in this project. I will provide several "public" test 
+programs as well as a few "secret" ones that you don't get to see until 
+you meet with me for the project review.</p>
+		<ul>
+		  <li>You will receive at least an A if your compiler correctly 
+compiles all of the public test programs as well as my secret test 
+programs.</li>
+		  <li>You will receive at least an A- if your compiler correctly compiles all of the public test programs.</li>
+		  <li>You will receive at least a B if you can demonstrate that you 
+have invested "reasonable effort" into the project, even if your 
+compiler doesn't fully run because of a persistent debugging problem. 
+The instructor has sole discretion as to what constitutes "reasonable 
+effort".</li>
+		  </ul>
+		<p>There will also be an opportunity to give a short  presentation on a
+ paper related to the class.&nbsp; Students who volunteer for this will 
+receive extra credit.&nbsp; There won&#8217;t be enough papers to accommodate 
+all students, so if you want to do this, volunteer early.		</p>
+		<h3>Comprehensive Examination</h3>
+        <p>For those students who wish to take a Comprehensive Exam for 
+this class, there will be a written examination on  Thursday, Mar 20th, 
+4:00-6:00pm in the regular classroom. This is the time slot that the 
+Registrar has scheduled for a final exam.</p>
+        <p>Note that the grade for the comprehensive exam will be completely separate from your letter grade for this class.</p>
+        <h3>Handouts</h3>
+        <ul>
+          <li><a href="http://www.michaelfranz.com/CS241/2014CS241Project.pdf">Class Project Description</a>
+            <ul>
+              <li>a suite of <a href="http://www.michaelfranz.com/CS241/testprogs/">test programs</a> is available to test your compiler</li>
+            </ul>
+          </li>
+          <li><a href="http://www.michaelfranz.com/CS241/DLX.pdf">Description of the DLX Machine Architecture</a></li>
+          <li><a href="http://www.michaelfranz.com/CS241/DLX.java">A Java simulator for the DLX Machine Architecture</a></li>
+        </ul>
+        <h3>Textbook</h3>
+		This class does not use a textbook, and buying one of the many 
+available textbooks on compiler construction is not likely to help you 
+much. Instead,  come to the class well rested and alert and simply 
+		try to absorb the material as it is being presented in class.
+		<hr>
+		<h3>Research Papers To Read</h3>
+<h4>Dominator Trees</h4>
+		<p><em>efficient generation of the dominator tree for a given control flow
+		      graph</em><br>
+		      T. Lengauer and R. E. Tarjan; <a href="http://doi.acm.org/10.1145/357062.357071">"A
+		      Fast Algorithm for Finding Dominators in a Flowgraph"</a>; ACM Transactions
+		      on Programming Languages and Systems, 1:1, 121-141; 1979.</p>
+		<h4>Static Single Assignment Form</h4>
+		<p><em>an early paper documenting IBM&#8217;s PL.8 compiler (no mention of
+		    SSA yet)</em><br>
+		    M. Auslander and M. Hopkins; "<a href="http://doi.acm.org/10.1145/800230.806977">An
+		    Overview of the PL.8 Compiler</a>";
+		    Proceedings of the ACM SIGPLAN '82 Symposium on Compiler Construction,
+		    Boston,
+		    Massachusetts, published as Sigplan Notices, 17:6, 22-31;
+		        1982.</p>
+		<p><em>first mention of SSA in the literature (two papers published
+		          simultaneously)</em><br>
+	          B. Alpern, M. N. Wegman and F. K. Zadeck; "<a href="http://doi.acm.org/10.1145/73560.73561">Detecting
+	          Equality of Variables in Programs</a>"; Proceedings of the Fifteenth
+	          Annual ACM SIGACT-SIGPLAN Symposium on Principles of Programming
+	          Languages, San
+	          Diego, California,
+		          1-11; 1988.</p>
+		<p>B. K. Rosen, M. N. Wegman and F. K. Zadeck; "<a href="http://doi.acm.org/10.1145/73560.73562">Global
+		    Value Numbers and Redundant Computations</a>"; Proceedings of the Fifteenth
+		    Annual ACM SIGACT-SIGPLAN Symposium on Principles of Programming
+		    Languages, San Diego, California,
+		            12-27; 1988.</p>
+		<p><em>efficient generation of SSA</em><br>
+		    R. Cytron, J. Ferrante, B. K. Rosen, M. N. Wegman and F.
+		              K. Zadeck; "<a href="http://doi.acm.org/10.1145/115372.115320">Efficiently
+		              Computing Static Single Assignment Form and the Control
+		              Dependence Graph</a>"; ACM Transactions on Programming Languages
+		              and Systems, 13:4, 451-490; 1991.</p>
+		<p>M. M. Brandis and H. Mössenböck; "<a href="http://doi.acm.org/10.1145/197320.197331">Single-Pass
+		    Generation of Static Single-Assignment Form for Structured Languages</a>"; ACM
+		    Transactions on Programming Languages and Systems, 16:6, 1684-1698;
+		    1994.</p>
+		<h4>Register Allocation</h4>
+		<p><em>Chaitin's original algorithm</em>:<br>
+		    G.J. Chaitin, M. A. Auslander, A. K. Chandra, J. Cocke,
+		                    M. E. Hopkins and P. W. Markstein; "Register Allocation
+		      Via Coloring"; Computer Languages, 6:1, pp. 47-57; 1981.</p>
+		<p><em>but this is easier to track down:</em><br>
+		    G. J. Chaitin; "<a href="http://doi.acm.org/10.1145/800230.806984">Register
+		    Allocation and Spilling Via Graph Coloring</a>"; Proceedings of ACM
+		    SIGPLAN Symposium on Compiler Construction, published as SIGPLAN
+		    Notices, 17:6,
+		    pp. 98-105; 1982.</p>
+		<p><em>the 'other' graph coloring algorithm, rival to
+		                        Chaitin:</em><br>
+              F. C. Chow and J. Hennessy; <a href="http://doi.acm.org/10.1145/88616.88621">"The
+              Priority-Based-Coloring Approach to Register Allocation</a>"; ACM
+              Transactions on Programming Languages and Systems, 12:4, pp. 501-536;
+              1990.</p>
+		<p><em>cost functions:</em><br>
+		    T. A. Proebsting and C. N. Fischer; "<a href="http://doi.acm.org/10.1145/236114.236117">Demand-Driven
+		    Register Allocation</a>"; ACM Transactions on Programming Languages
+		    and Systems, 18:6, pp.683-710; 1996.</p>
+		<p><em>almost classic now:</em><br>
+		    P. Briggs, K. D. Cooper, L. Torczon; "<a href="http://doi.acm.org/10.1145/177492.177575">Improvements
+		    to Graph Coloring Register Allocation</a>"; ACM Transactions on 
+Programming
+		    Languages and Systems, 16: 3, pp. 428-455; 1994.                  
+                                                                        
+                                                                        
+                                                                        
+                                                                        
+                                                                        
+                                                                        
+                                                                        
+                                                                        
+                                                                        
+                                                                        
+                                                                        
+                                                                        
+                                                                        
+                                             </p>
+		<p><em>for a later
+		                              improvement to Briggs&#8217; algorithm, as well
+		                              as an SSA based description of it:</em><br>
+              L. George and A. Appel; "<a href="http://doi.acm.org/10.1145/237721.237777">Iterated
+              Register Coalescing</a>"; ACM Transactions on Programming
+              Languages and Systems, 18:3, pp. 300-324; 1996. </p>		<p><em>linear-scan register allocation:</em><br>
+		    O. Traub, G. Holloway, and M. D. Smith; "<a href="http://doi.acm.org/10.1145/277650.277714">Quality
+		    and Speed in Linear Scan Register Allocation</a>"; Proceedings of
+		    the ACM SIGPLAN '98 Conference on Programming Language Design and Implementation
+		                                (PLDI 1998), pp.
+		                                142-151; 1998.</p>
+		<p>M. Poletto and V. Sarkar; "<a href="http://doi.acm.org/10.1145/330249.330250">Linear
+		    Scan Register Allocation</a>"; ACM Transactions on Programming Languages
+		                                  and Systems, 21:5, pp. 895-913; 1999.</p>
+		<p><em>register allocation via the control-flow
+		                                    hierarchy</em>:<br>
+              D. Callahan and B. Koblenz; "<a href="http://doi.acm.org/10.1145/113445.113462">Register
+              Allocation via Hierarchical Graph Coloring</a>"; Proceedings
+              of the ACM SIGPLAN '91 Conference on Programming Language
+		                                    Design and Implementation
+		                                    (PLDI 1991), pp.
+		                                    192ff; 1991.</p>
+		<p>C. Norris and L. L. Pollock; "<a href="http://doi.acm.org/10.1145/178243.178427">Register
+		    Allocation over the Program Dependence Graph</a>"; Proceedings of
+		    the ACM SIGPLAN '94 Conference on Programming Language
+		                                      Design and Implementation
+		                                      (PLDI 1994), pp.
+          266ff; 1994.		</p></td>
+		</tr>
+
+<!-- content row 5: version history-->
+		<tr>
+		<td height="10"><div align="right"><font color="#000099" face="Arial, Helvetica, sans-serif" size="1">
+		<em>last update: 23rd December 2013 - franz@uci.edu</em>
+		</font></div></td>
+		</tr>
+		  
+    </tbody></table>
+    </td>
+  </tr>
+</tbody></table>
+
+
+</body></html>
